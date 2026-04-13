@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProZen — Planillas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- SheetJS para Excel -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<!-- jsPDF para PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+<style>
+:root {
+  --verde: #1D6F42;
+  --verde-h: #165a34;
+  --verde-bg: #e8f5ee;
+  --verde-bg2: #d0ead9;
+  --gris: #f5f6f7;
+  --borde: #e2e4e7;
+  --gris-t: #6b7280;
+  --negro: #111827;
+  --blanco: #ffffff;
+  --rojo: #dc2626;
+  --rojo-bg: #fef2f2;
+  --amarillo: #d97706;
+  --amarillo-bg: #fffbeb;
+  --azul: #2563eb;
+  --azul-bg: #eff6ff;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --r: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--gris);color:var(--negro);font-size:14px}
+
+/* ── SIDEBAR ── */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:220px;background:var(--blanco);border-right:1px solid var(--borde);display:flex;flex-direction:column;position:fixed;top:0;bottom:0;z-index:50;transition:transform .2s}
+.sidebar-logo{padding:18px 20px;border-bottom:1px solid var(--borde);display:flex;align-items:center;gap:10px}
+.logo-ico{width:34px;height:34px;background:var(--verde);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.logo-ico svg{width:18px;height:18px}
+.logo-name{font-size:16px;font-weight:700}.logo-name span{color:var(--verde)}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 10px}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--gris-t);padding:8px 10px 4px;text-transform:uppercase}
+.nav-link{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--gris-t);text-decoration:none;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;font-family:'DM Sans',sans-serif}
+.nav-link:hover{background:var(--gris);color:var(--negro)}
+.nav-link.active{background:var(--verde-bg);color:var(--verde);font-weight:600}
+.nav-link svg{width:15px;height:15px;flex-shrink:0}
+.sidebar-footer{padding:14px 16px;border-top:1px solid var(--borde)}
+.user-row{display:flex;align-items:center;gap:8px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--verde);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:11px;color:var(--gris-t)}
+.btn-logout{padding:4px 8px;border:1px solid var(--borde);border-radius:6px;background:#fff;color:var(--gris-t);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.btn-logout:hover{border-color:var(--rojo);color:var(--rojo)}
+
+/* ── MAIN ── */
+.main{margin-left:220px;flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--blanco);border-bottom:1px solid var(--borde);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:40}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.empresa-badge{display:flex;align-items:center;gap:6px;padding:4px 10px;background:var(--verde-bg);border-radius:20px;font-size:12px;font-weight:500;color:var(--verde)}
+.empresa-dot{width:6px;height:6px;border-radius:50%;background:var(--verde)}
+.content{padding:24px;flex:1}
+
+/* ── CARDS ── */
+.card{background:#fff;border:1px solid var(--borde);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-pad{padding:20px}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--borde)}
+.card-title{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--verde);flex-shrink:0}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:0;border-bottom:2px solid var(--borde);margin-bottom:24px}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--gris-t);font-family:'DM Sans',sans-serif;position:relative;transition:color .15s}
+.tab:hover{color:var(--negro)}
+.tab.active{color:var(--verde);font-weight:600}
+.tab.active::after{content:'';position:absolute;bottom:-2px;left:0;right:0;height:2px;background:var(--verde);border-radius:2px 2px 0 0}
+.tab-panel{display:none}.tab-panel.active{display:block}
+
+/* ── FORM ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.fgroup{display:flex;flex-direction:column;gap:4px}
+.flabel{font-size:11px;font-weight:600;color:var(--gris-t);text-transform:uppercase;letter-spacing:.04em}
+.finput,.fselect{padding:9px 12px;border:1px solid var(--borde);border-radius:7px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--negro);outline:none;transition:border-color .15s;background:#fff;width:100%}
+.finput:focus,.fselect:focus{border-color:var(--verde)}
+.fhint{font-size:11px;color:var(--gris-t)}
+
+/* ── BTNS ── */
+.btn{padding:8px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;font-family:'DM Sans',sans-serif;transition:all .15s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-green{background:var(--verde);color:#fff;border-color:var(--verde)}.btn-green:hover{background:var(--verde-h)}
+.btn-outline{background:#fff;color:var(--negro);border-color:var(--borde)}.btn-outline:hover{border-color:var(--verde);color:var(--verde)}
+.btn-red{background:var(--rojo);color:#fff;border-color:var(--rojo)}.btn-red:hover{background:#b91c1c}
+.btn-yellow{background:var(--amarillo);color:#fff;border-color:var(--amarillo)}.btn-yellow:hover{background:#b45309}
+.btn-blue{background:var(--azul);color:#fff;border-color:var(--azul)}.btn-blue:hover{background:#1d4ed8}
+.btn-sm{padding:6px 11px;font-size:12px}
+.btn-xs{padding:4px 8px;font-size:11px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:9px 12px;font-size:11px;font-weight:600;color:var(--gris-t);text-transform:uppercase;letter-spacing:.04em;background:var(--gris);border-bottom:1px solid var(--borde);white-space:nowrap}
+td{padding:10px 12px;font-size:13px;border-bottom:1px solid var(--borde);vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafbfc}
+tfoot td{background:var(--gris);font-weight:700;font-size:13px;border-top:2px solid var(--borde)}
+.mono{font-family:'DM Mono',monospace;font-size:12px}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.bg-green{background:var(--verde-bg);color:var(--verde)}
+.bg-yellow{background:var(--amarillo-bg);color:var(--amarillo)}
+.bg-red{background:var(--rojo-bg);color:var(--rojo)}
+.bg-blue{background:var(--azul-bg);color:var(--azul)}
+.bg-gray{background:var(--gris);color:var(--gris-t)}
+
+/* ── STATS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:20px}
+.stat{background:#fff;border:1px solid var(--borde);border-radius:var(--r);padding:14px 16px}
+.stat-label{font-size:11px;font-weight:600;color:var(--gris-t);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+.stat-val{font-size:20px;font-weight:700;font-family:'DM Mono',monospace}
+.stat-sub{font-size:11px;color:var(--gris-t);margin-top:2px}
+.t-red{color:var(--rojo)}.t-green{color:var(--verde)}.t-blue{color:var(--azul)}.t-yellow{color:var(--amarillo)}
+
+/* ── PERIODO ROW ── */
+.periodo-row{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--borde);transition:background .15s}
+.periodo-row:last-child{border-bottom:none}
+.periodo-row:hover{background:var(--gris)}
+.periodo-num{width:32px;height:32px;border-radius:8px;background:var(--verde-bg);color:var(--verde);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.periodo-info{flex:1}
+.periodo-code{font-size:14px;font-weight:600}
+.periodo-sub{font-size:12px;color:var(--gris-t)}
+.periodo-monto{text-align:right}
+.periodo-monto-val{font-size:15px;font-weight:700;font-family:'DM Mono',monospace}
+.periodo-monto-label{font-size:11px;color:var(--gris-t)}
+.periodo-actions{display:flex;gap:6px;align-items:center}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.modal-head{display:flex;justify-content:space-between;align-items:flex-start;padding:20px 24px;border-bottom:1px solid var(--borde);position:sticky;top:0;background:#fff;z-index:1}
+.modal-title{font-size:16px;font-weight:700}
+.modal-sub{font-size:12px;color:var(--gris-t);margin-top:2px}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--gris-t);font-size:20px;line-height:1;padding:0}.modal-close:hover{color:var(--negro)}
+.modal-body{padding:20px 24px}
+.modal-foot{padding:16px 24px;border-top:1px solid var(--borde);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:#fff}
+
+/* ── RECIBO ── */
+.recibo{font-family:'DM Sans',sans-serif;background:#fff;border:1px solid var(--borde);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.recibo-head{background:var(--verde);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start}
+.recibo-head-logo{font-size:18px;font-weight:700;letter-spacing:-.5px}
+.recibo-head-info{text-align:right;font-size:12px;opacity:.9}
+.recibo-body{padding:16px 20px}
+.recibo-emp{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;padding-bottom:14px;border-bottom:1px dashed var(--borde)}
+.recibo-field{display:flex;flex-direction:column;gap:2px}
+.recibo-field-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--gris-t)}
+.recibo-field-val{font-size:13px;font-weight:500}
+.recibo-table{width:100%;border-collapse:collapse;margin-bottom:12px}
+.recibo-table th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--gris-t);padding:4px 8px;background:var(--gris);border-bottom:1px solid var(--borde)}
+.recibo-table td{padding:6px 8px;font-size:12px;border-bottom:1px solid #f0f0f0}
+.recibo-table tfoot td{font-weight:700;background:var(--gris);border-top:1px solid var(--borde)}
+.recibo-total{background:var(--verde-bg);border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+.recibo-total-label{font-size:12px;font-weight:600;color:var(--verde)}
+.recibo-total-val{font-size:20px;font-weight:700;color:var(--verde);font-family:'DM Mono',monospace}
+.recibo-firma{margin-top:14px;padding-top:14px;border-top:1px dashed var(--borde);display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:11px;color:var(--gris-t)}
+.recibo-firma-line{border-top:1px solid var(--negro);padding-top:4px;text-align:center;margin-top:20px}
+
+/* ── RESUMEN CALC ── */
+.calc-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--borde);font-size:13px}
+.calc-row:last-child{border-bottom:none}
+.calc-row.total{border-top:2px solid var(--borde);border-bottom:none;padding-top:10px;margin-top:4px;font-weight:700;font-size:14px}
+.calc-row.sub{color:var(--gris-t);font-size:12px}
+.calc-val{font-family:'DM Mono',monospace;font-weight:500}
+.neg{color:var(--rojo)}.pos{color:var(--verde)}
+
+/* ── INFO BOX ── */
+.info-box{border-radius:8px;padding:10px 14px;font-size:12px;line-height:1.6}
+.ib-red{background:var(--rojo-bg);border-left:3px solid var(--rojo);color:#991b1b}
+.ib-yellow{background:var(--amarillo-bg);border-left:3px solid var(--amarillo);color:#78350f}
+.ib-green{background:var(--verde-bg);border-left:3px solid var(--verde);color:#1a5232}
+
+/* ── MISC ── */
+.empty{text-align:center;padding:36px 20px;color:var(--gris-t)}
+.empty-ico{font-size:32px;margin-bottom:8px;opacity:.5}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--borde);border-top-color:var(--verde);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loader{position:fixed;inset:0;background:rgba(255,255,255,.75);z-index:500;display:flex;align-items:center;justify-content:center}
+.loader-box{background:#fff;border:1px solid var(--borde);border-radius:10px;padding:20px 28px;display:flex;align-items:center;gap:12px;font-size:14px;box-shadow:var(--shadow-md)}
+#toast{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--negro);color:#fff;padding:10px 16px;border-radius:8px;font-size:13px;box-shadow:var(--shadow-md);animation:tin .2s ease;display:flex;align-items:center;gap:8px}
+.toast.ok{background:var(--verde)}.toast.err{background:var(--rojo)}.toast.warn{background:var(--amarillo)}
+@keyframes tin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.gap16{gap:16px}.mt16{margin-top:16px}.mb16{margin-bottom:16px}
+.flex{display:flex}.items-center{align-items:center}.gap8{gap:8px}.gap6{gap:6px}.justify-between{justify-content:space-between}
+.fw700{font-weight:700}.fs12{font-size:12px}.fs11{font-size:11px}
+
+/* ── LOGIN ── */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--gris)}
+.login-card{background:#fff;border-radius:var(--r);border:1px solid var(--borde);padding:40px;width:360px;box-shadow:var(--shadow-md)}
+.login-brand{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.login-brand-ico{width:40px;height:40px;background:var(--verde);border-radius:10px;display:flex;align-items:center;justify-content:center}
+.login-brand-name{font-size:20px;font-weight:700}.login-brand-name span{color:var(--verde)}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN
+══════════════════════════════════════ -->
+<div id="pgLogin" class="login-wrap">
+  <div class="login-card">
+    <div class="login-brand">
+      <div class="login-brand-ico">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div>
+        <div class="login-brand-name">Pro<span>Zen</span></div>
+        <div style="font-size:11px;color:var(--gris-t)">Nómina Guatemala</div>
+      </div>
+    </div>
+    <div style="font-size:13px;color:var(--gris-t);margin-bottom:22px">Módulo 5 — Planillas</div>
+    <div class="fgroup" style="margin-bottom:14px">
+      <label class="flabel">Correo</label>
+      <input class="finput" type="email" id="lEmail" value="admin@prozen.gt">
+    </div>
+    <div class="fgroup" style="margin-bottom:20px">
+      <label class="flabel">Contraseña</label>
+      <input class="finput" type="password" id="lPass" value="admin123">
+    </div>
+    <button class="btn btn-green" style="width:100%" onclick="doLogin()">Iniciar sesión</button>
+    <div id="lErr" style="color:var(--rojo);font-size:12px;margin-top:8px;display:none"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP
+══════════════════════════════════════ -->
+<div id="pgApp" class="layout" style="display:none">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+      <div class="logo-name">Pro<span>Zen</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">Principal</div>
+      <a href="https://stellar-kulfi-bf2f26.netlify.app" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</a>
+      <div class="nav-section">Nómina</div>
+      <a href="https://stellar-kulfi-bf2f26.netlify.app/empleados" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Empleados</a>
+      <a href="https://stellar-kulfi-bf2f26.netlify.app/ingresos" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Ingresos</a>
+      <a href="https://stellar-kulfi-bf2f26.netlify.app/descuentos" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>Descuentos</a>
+      <a href="javascript:void(0)" class="nav-link active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Planillas</a>
+      <div class="nav-section">Prestaciones</div>
+      <a href="https://stellar-kulfi-bf2f26.netlify.app/prestaciones" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>Prestaciones</a>
+      <div class="nav-section">Sistema</div>
+      <a href="https://stellar-kulfi-bf2f26.netlify.app/catalogos" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Catálogos</a>
+      <a href="https://stellar-kulfi-bf2f26.netlify.app/reportes" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>Reportes</a>
+      <a href="https://stellar-kulfi-bf2f26.netlify.app/configuracion" class="nav-link"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Configuración</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="avatar" id="sAvatar">A</div>
+        <div class="user-info">
+          <div class="user-name" id="sNombre">—</div>
+          <div class="user-role" id="sEmpresa">—</div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()">Salir</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Planillas</div>
+      <div class="topbar-right">
+        <div class="empresa-badge"><span class="empresa-dot"></span><span id="tEmpresa">Cargando...</span></div>
+      </div>
+    </div>
+    <div class="content">
+
+      <!-- PAGE HEADER -->
+      <div class="flex items-center justify-between mb16" style="margin-bottom:20px">
+        <div>
+          <h1 style="font-size:20px;font-weight:700">Planillas</h1>
+          <p style="font-size:13px;color:var(--gris-t);margin-top:2px">Períodos, cálculo y cierre de nómina</p>
+        </div>
+        <button class="btn btn-green" onclick="abrirNuevoPeriodo()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          + Nuevo período
+        </button>
+      </div>
+
+      <!-- EMPRESA SELECTOR -->
+      <div class="card card-pad mb16" style="margin-bottom:16px">
+        <div class="form-grid" style="grid-template-columns:1fr 1fr auto;align-items:flex-end;gap:14px">
+          <div class="fgroup">
+            <label class="flabel">Empresa</label>
+            <select class="fselect" id="selEmpresa" onchange="onEmpresaChange()"></select>
+          </div>
+          <div class="fgroup">
+            <label class="flabel">Filtrar por estado</label>
+            <select class="fselect" id="selEstado" onchange="renderPeriodos()">
+              <option value="">Todos</option>
+              <option value="calculada">Calculada</option>
+              <option value="borrador">Borrador</option>
+              <option value="cerrada">Cerrada</option>
+            </select>
+          </div>
+          <button class="btn btn-outline" onclick="cargarPeriodos()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Actualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('periodos',this)">Períodos</button>
+        <button class="tab" onclick="switchTab('calcular',this)">Calcular planilla</button>
+        <button class="tab" onclick="switchTab('historial',this)">Historial</button>
+      </div>
+
+      <!-- ══ TAB: PERÍODOS ══ -->
+      <div class="tab-panel active" id="tp-periodos">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="dot"></span>Períodos de nómina</div>
+            <span id="ctPeriodos" class="badge bg-gray">0 períodos</span>
+          </div>
+          <div id="listaPeriodos">
+            <div class="empty"><div class="empty-ico">📋</div><p>No hay períodos creados</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TAB: CALCULAR ══ -->
+      <div class="tab-panel" id="tp-calcular">
+        <div class="grid2 gap16">
+          <!-- Parámetros -->
+          <div class="card">
+            <div class="card-head"><div class="card-title"><span class="dot"></span>Parámetros del cálculo</div></div>
+            <div class="card-pad" style="display:flex;flex-direction:column;gap:14px">
+              <div class="fgroup">
+                <label class="flabel">Período *</label>
+                <select class="fselect" id="calcPeriodo" onchange="onPeriodoChange()"></select>
+              </div>
+              <div class="fgroup">
+                <label class="flabel">Empleado (opcional)</label>
+                <select class="fselect" id="calcEmpleado">
+                  <option value="">Todos los empleados activos con código</option>
+                </select>
+              </div>
+              <div class="form-grid" style="gap:10px">
+                <div class="fgroup">
+                  <label class="flabel">Días laborados</label>
+                  <input class="finput" type="number" id="calcDias" value="15" min="1" max="31">
+                  <span class="fhint">Para quincena: 15, mensual: 30</span>
+                </div>
+                <div class="fgroup">
+                  <label class="flabel">Horas extra totales</label>
+                  <input class="finput" type="number" id="calcHExtra" value="0" min="0">
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-green" onclick="calcularPlanilla()" id="btnCalc">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21 5,3"/></svg>
+                  Calcular
+                </button>
+                <button class="btn btn-outline" id="btnGuardar" onclick="guardarPlanilla()" disabled>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17,21 17,13 7,13"/><polyline points="7,3 7,8 15,8"/></svg>
+                  Guardar planilla
+                </button>
+                <button class="btn btn-outline" id="btnRecalc" onclick="calcularPlanilla()" disabled>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+                  Recalcular
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Resumen -->
+          <div class="card">
+            <div class="card-head"><div class="card-title"><span class="dot"></span>Resumen del cálculo</div></div>
+            <div class="card-pad" id="resumenCalc">
+              <div class="empty"><div class="empty-ico">📊</div><p>Calcule para ver el resumen</p></div>
+            </div>
+          </div>
+        </div>
+        <!-- Detalle tabla -->
+        <div class="card mt16" style="margin-top:16px" id="cardDetalle" style="display:none">
+          <div class="card-head">
+            <div class="card-title"><span class="dot"></span><span id="detalleTitle">Detalle</span></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" onclick="exportarExcel()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><path d="M8 13h2M8 17h2M14 13h2M14 17h2"/></svg>
+                Excel
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="exportarPDF()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                PDF
+              </button>
+              <button class="btn btn-outline btn-sm" onclick="abrirRecibos('todos')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                Recibos (todos)
+              </button>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table id="tablaDetalle">
+              <thead id="theadDetalle"></thead>
+              <tbody id="tbodyDetalle"></tbody>
+              <tfoot id="tfootDetalle"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ TAB: HISTORIAL ══ -->
+      <div class="tab-panel" id="tp-historial">
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title"><span class="dot"></span>Historial de planillas</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" onclick="exportarHistorialExcel()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+                Excel
+              </button>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table>
+              <thead><tr>
+                <th>Período</th><th>Tipo</th><th>Total bruto</th><th>IGSS obrero</th>
+                <th>ISR</th><th>Descuentos</th><th>Líquido</th><th>Estado</th><th>Acciones</th>
+              </tr></thead>
+              <tbody id="tbodyHistorial">
+                <tr><td colspan="9"><div class="empty"><div class="empty-ico">📋</div><p>Sin historial</p></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ══ MODAL: NUEVO PERÍODO ══ -->
+<div class="modal-overlay" id="modalNuevo">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head">
+      <div><div class="modal-title">Nuevo período de nómina</div><div class="modal-sub">Define el período para el cálculo</div></div>
+      <button class="modal-close" onclick="cerrarModal('modalNuevo')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:14px">
+      <div class="fgroup">
+        <label class="flabel">Tipo de período</label>
+        <select class="fselect" id="npTipo" onchange="autoFechas()">
+          <option value="primera_quincena">Primera quincena</option>
+          <option value="segunda_quincena">Segunda quincena</option>
+          <option value="mensual">Mensual</option>
+          <option value="especial">Especial</option>
+        </select>
+      </div>
+      <div class="form-grid">
+        <div class="fgroup">
+          <label class="flabel">Fecha inicio</label>
+          <input class="finput" type="date" id="npInicio">
+        </div>
+        <div class="fgroup">
+          <label class="flabel">Fecha fin</label>
+          <input class="finput" type="date" id="npFin">
+        </div>
+      </div>
+      <div class="fgroup">
+        <label class="flabel">Descripción (opcional)</label>
+        <input class="finput" type="text" id="npDesc" placeholder="Ej: Planilla especial bono...">
+      </div>
+      <div class="info-box ib-green" id="npPreview">—</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="cerrarModal('modalNuevo')">Cancelar</button>
+      <button class="btn btn-green" onclick="crearPeriodo()">Crear período</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: VER DETALLE PERÍODO ══ -->
+<div class="modal-overlay" id="modalDetPeriodo">
+  <div class="modal" style="max-width:96vw;width:1100px">
+    <div class="modal-head">
+      <div>
+        <div class="modal-title" id="detPTitle">Detalle de planilla</div>
+        <div class="modal-sub" id="detPSub">—</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-outline btn-sm" onclick="exportarExcelModal()">Excel</button>
+        <button class="btn btn-outline btn-sm" onclick="exportarPDFModal()">PDF</button>
+        <button class="btn btn-green btn-sm" onclick="abrirRecibosModal()">Recibos</button>
+        <button class="modal-close" onclick="cerrarModal('modalDetPeriodo')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <!-- stats -->
+      <div class="stats-grid" id="detPStats" style="margin-bottom:16px">
+        <div class="stat"><div class="stat-label">Empleados</div><div class="stat-val" id="dps0">—</div></div>
+        <div class="stat"><div class="stat-label">Total devengado</div><div class="stat-val t-green" id="dps1">—</div></div>
+        <div class="stat"><div class="stat-label">IGSS obrero</div><div class="stat-val t-red" id="dps2">—</div></div>
+        <div class="stat"><div class="stat-label">ISR retenido</div><div class="stat-val t-red" id="dps3">—</div></div>
+        <div class="stat"><div class="stat-label">Líquido a pagar</div><div class="stat-val t-blue" id="dps4">—</div></div>
+      </div>
+      <div class="tbl-wrap">
+        <table id="detPTable">
+          <thead id="detPThead"></thead>
+          <tbody id="detPTbody"></tbody>
+          <tfoot id="detPTfoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: RECIBOS ══ -->
+<div class="modal-overlay" id="modalRecibos">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-head">
+      <div><div class="modal-title" id="reciboTitle">Recibos de pago</div><div class="modal-sub" id="reciboSub">—</div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn btn-green btn-sm" onclick="imprimirRecibos()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 6,2 18,2 18,9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Imprimir
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="exportarRecibosPDF()">PDF</button>
+        <button class="modal-close" onclick="cerrarModal('modalRecibos')">✕</button>
+      </div>
+    </div>
+    <div class="modal-body" id="contenedorRecibos" style="display:flex;flex-direction:column;gap:16px"></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════
+     SCRIPT
+══════════════════════════════════ -->
+<script>
+const SB_URL='https://rjwvnkdftilwypidvhke.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqd3Zua2RmdGlsd3lwaWR2aGtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NDk1NzksImV4cCI6MjA5MTQyNTU3OX0.jQfjeZRqosWDrL22mPnbGh23jLUEHyM6bNpgwr8p2Ic';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+// ── CONSTANTES GUATEMALA ──
+const IGSS_OBR=0.0483, IGSS_PAT=0.1267, IRTRA=0.01, INTECAP=0.01;
+
+// ── ESTADO GLOBAL ──
+let sesion=null, empresas=[], empleados=[], periodos=[];
+let calcData=[]=[], colsDin=[], periodoActivo=null;
+let modalPeriodoId=null, modalPeriodoData=[];
+
+// ── HELPERS ──
+const Q=id=>document.getElementById(id);
+const fmt=v=>v==null?'—':parseFloat(v).toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fQ=v=>`Q ${fmt(v)}`;
+
+function toast(msg,tipo=''){
+  const d=document.createElement('div');
+  d.className=`toast ${tipo==='ok'?'ok':tipo==='err'?'err':tipo==='warn'?'warn':''}`;
+  d.innerHTML=(tipo==='ok'?'✓ ':tipo==='err'?'✕ ':tipo==='warn'?'⚠ ':'')+msg;
+  Q('toast').appendChild(d);
+  setTimeout(()=>d.remove(),3500);
+}
+function loader(show,msg='Procesando...'){
+  let el=document.getElementById('_loader');
+  if(show){
+    if(!el){el=document.createElement('div');el.id='_loader';el.className='loader';
+    el.innerHTML=`<div class="loader-box"><div class="spinner"></div><span>${msg}</span></div>`;
+    document.body.appendChild(el);}
+  }else{if(el)el.remove();}
+}
+function abrirModal(id){Q(id).classList.add('open');}
+function cerrarModal(id){Q(id).classList.remove('open');}
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  Q('tp-'+id).classList.add('active'); btn.classList.add('active');
+  if(id==='historial') cargarHistorial();
+}
+
+// ── LOGIN ──
+async function doLogin(){
+  const email=Q('lEmail').value.trim(), pass=Q('lPass').value;
+  Q('lErr').style.display='none';
+  // Validar credenciales maestras
+  if(email!=='admin@prozen.gt'||pass!=='admin123'){
+    Q('lErr').textContent='Credenciales incorrectas.';Q('lErr').style.display='block';return;
+  }
+  // Intentar cargar datos del usuario desde BD (opcional — no bloquea el acceso)
+  let nombreUsuario='Administrador';
+  try{
+    const{data}=await sb.from('usuarios').select('*').eq('email',email).maybeSingle();
+    if(data) nombreUsuario=data.nombre||data.email||'Administrador';
+    sesion=data||{email,nombre:nombreUsuario,rol:'admin'};
+  }catch{
+    sesion={email,nombre:nombreUsuario,rol:'admin'};
+  }
+  Q('pgLogin').style.display='none';Q('pgApp').style.display='flex';
+  Q('sNombre').textContent=nombreUsuario;
+  Q('sAvatar').textContent=nombreUsuario.charAt(0).toUpperCase();
+  await init();
+}
+function doLogout(){sesion=null;Q('pgLogin').style.display='flex';Q('pgApp').style.display='none';}
+
+// Navegación entre módulos — usa la URL base de Netlify
+const NETLIFY_BASE='https://stellar-kulfi-bf2f26.netlify.app';
+const RUTAS_MODULOS={
+  'empleados':  NETLIFY_BASE+'/empleados',
+  'ingresos':   NETLIFY_BASE+'/ingresos',
+  'descuentos': NETLIFY_BASE+'/descuentos',
+  'planillas':  NETLIFY_BASE+'/planillas',
+  'prestaciones': NETLIFY_BASE+'/prestaciones',
+  'catalogos':  NETLIFY_BASE+'/catalogos',
+  'reportes':   NETLIFY_BASE+'/reportes',
+  'configuracion': NETLIFY_BASE+'/configuracion',
+};
+function navegar(modulo){
+  const url=RUTAS_MODULOS[modulo];
+  if(url) window.location.href=url;
+  else toast('Módulo no disponible aún','warn');
+}
+
+// ── INIT ──
+async function init(){
+  await cargarEmpresas();
+  autoFechas();
+}
+
+// Detecta qué columna usar como nombre de empresa
+function getNombreEmpresa(e){
+  return e.razon_social || e.nombre || e.company_name || e.name ||
+         Object.values(e).find(v=>typeof v==='string'&&v.length>2&&!v.includes('@')&&!v.includes('-')&&v!=='activo'&&v!=='inactivo') || 
+         `Empresa ${e.id||e.identificación}`;
+}
+// ID real de la empresa (columna se llama 'identificación' en Supabase)
+function getEmpId(e){ return e.id || e.identificación; }
+
+async function cargarEmpresas(){
+  const sel=Q('selEmpresa');
+  sel.innerHTML='<option value="">Cargando empresas...</option>';
+  // Traer todo sin ordenar por columna específica
+  const{data,error}=await sb.from('empresas').select('*');
+  if(error){
+    console.error('Error cargando empresas:',error);
+    sel.innerHTML='<option value="">Error al cargar empresas</option>';
+    toast('Error BD: '+error.message,'err');
+    return;
+  }
+  empresas=data||[];
+  if(!empresas.length){
+    sel.innerHTML='<option value="">No hay empresas registradas</option>';
+    toast('No se encontraron empresas en la base de datos','warn');
+    return;
+  }
+  // Log de columnas para diagnóstico
+  console.log('Columnas de empresas:', Object.keys(empresas[0]));
+  console.log('Primera empresa:', empresas[0]);
+  
+  sel.innerHTML=empresas.map(e=>`<option value="${getEmpId(e)}">${getNombreEmpresa(e)}</option>`).join('');
+  sel.value=getEmpId(empresas[0]);
+  const nombre=getNombreEmpresa(empresas[0]);
+  Q('tEmpresa').textContent=nombre;
+  Q('sEmpresa').textContent=nombre;
+  await onEmpresaChange();
+}
+
+async function onEmpresaChange(){
+  const empId=Q('selEmpresa').value;
+  const emp=empresas.find(e=>getEmpId(e)==empId);
+  if(emp){
+    const nm=getNombreEmpresa(emp);
+    Q('tEmpresa').textContent=nm;
+    Q('sEmpresa').textContent=nm;
+  }
+  await cargarEmpleados();
+  await cargarPeriodos();
+}
+
+async function cargarEmpleados(){
+  const empId=Q('selEmpresa').value;
+  if(!empId){empleados=[];return;}
+  const{data}=await sb.from('empleados')
+    .select('*, cat_puestos(nombre), cat_departamentos(nombre)')
+    .eq('empresa_id',empId).eq('activo',true)
+    .not('codigo','is',null).order('codigo');
+  empleados=data||[];
+  const sel=Q('calcEmpleado');
+  sel.innerHTML='<option value="">Todos los empleados activos con código</option>';
+  empleados.forEach(e=>{
+    const o=document.createElement('option');
+    o.value=e.id;o.textContent=`${e.codigo} — ${e.nombre} ${e.apellido}`;
+    sel.appendChild(o);
+  });
+}
+
+// ── PERÍODOS ──
+async function cargarPeriodos(){
+  const empId=Q('selEmpresa').value;
+  if(!empId)return;
+  const{data,error:ep}=await sb.from('periodos_planilla')
+    .select('*').eq('empresa_id',empId).order('fecha_inicio',{ascending:false});
+  if(ep){console.error('periodos_planilla error:',ep);periodos=[];return;}
+  // Normalizar: asegurar que cada periodo tenga .id
+  periodos=(data||[]).map(p=>({...p, id: p.id||p.identificación}));
+  renderPeriodos();
+  llenarSelectPeriodos();
+}
+
+function renderPeriodos(){
+  const filtro=Q('selEstado').value;
+  const lista=filtro?periodos.filter(p=>p.estado===filtro):periodos;
+  Q('ctPeriodos').textContent=`${lista.length} períodos`;
+  const cont=Q('listaPeriodos');
+  if(!lista.length){
+    cont.innerHTML='<div class="empty"><div class="empty-ico">📋</div><p>No hay períodos</p></div>';return;
+  }
+  cont.innerHTML=lista.map((p,i)=>{
+    const tipo=tipoLabel(p.tipo);
+    const estado=p.estado||'borrador';
+    const liq=parseFloat(p.liquido_total||0);
+    return`<div class="periodo-row">
+      <div class="periodo-num">${i+1}</div>
+      <div class="periodo-info">
+        <div class="periodo-code">${p.nombre||'—'}</div>
+        <div class="periodo-sub">${tipo} · ${p.fecha_inicio||'—'} al ${p.fecha_fin||'—'}</div>
+      </div>
+      <div class="periodo-monto">
+        <div class="periodo-monto-val">${fQ(liq)}</div>
+        <div class="periodo-monto-label">Líquido total</div>
+      </div>
+      <div class="periodo-actions">
+        <span class="badge ${estadoBadge(estado)}">${estado}</span>
+        <button class="btn btn-green btn-sm" onclick="calcularDesdePeriodo('${p.id}')">Calcular</button>
+        <button class="btn btn-outline btn-sm" onclick="verDetallePeriodo('${p.id}')">Ver detalle</button>
+        <button class="btn btn-outline btn-sm" onclick="cerrarPeriodo('${p.id}')">Cerrar</button>
+        <button class="btn btn-xs" style="background:var(--rojo-bg);color:var(--rojo);border:1px solid #fca5a5" onclick="eliminarPeriodo('${p.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function tipoLabel(t){
+  const m={
+    'primera_quincena':'Primera quincena',
+    'segunda_quincena':'Segunda quincena', 
+    'mensual':'Mensual',
+    'especial':'Especial',
+    'quincenal':'Quincenal',
+    'quincena_1':'Primera quincena',
+    'quincena_2':'Segunda quincena'
+  };
+  return m[t]||t||'—';
+}
+function estadoBadge(e){
+  const m={calculada:'bg-green',cerrada:'bg-blue',borrador:'bg-gray'};
+  return m[e]||'bg-gray';
+}
+
+function llenarSelectPeriodos(){
+  const sel=Q('calcPeriodo');
+  sel.innerHTML=periodos.map(p=>`<option value="${p.id||p.identificación}">${p.nombre||p.id} — ${tipoLabel(p.tipo)}</option>`).join('');
+  if(periodos.length) onPeriodoChange();
+}
+
+function onPeriodoChange(){
+  const pid=Q('calcPeriodo').value;
+  const p=periodos.find(x=>(x.id||x.identificación)==pid);
+  if(!p)return;
+  const tipo=p.tipo||'';
+  Q('calcDias').value=tipo.includes('mensual')?30:15;
+}
+
+function calcularDesdePeriodo(pid){
+  switchTab('calcular',document.querySelectorAll('.tab')[1]);
+  Q('calcPeriodo').value=pid;
+  onPeriodoChange();
+}
+
+// ── NUEVO PERÍODO ──
+function abrirNuevoPeriodo(){
+  autoFechas();
+  abrirModal('modalNuevo');
+}
+
+function autoFechas(){
+  const tipo=Q('npTipo')?.value||'primera_quincena';
+  const hoy=new Date();
+  const y=hoy.getFullYear(), m=String(hoy.getMonth()+1).padStart(2,'0');
+  let ini,fin;
+  if(tipo==='primera_quincena'){ini=`${y}-${m}-01`;fin=`${y}-${m}-15`;}
+  else if(tipo==='segunda_quincena'){
+    const lastDay=new Date(y,hoy.getMonth()+1,0).getDate();
+    ini=`${y}-${m}-16`;fin=`${y}-${m}-${lastDay}`;
+  }else if(tipo==='mensual'){
+    const lastDay=new Date(y,hoy.getMonth()+1,0).getDate();
+    ini=`${y}-${m}-01`;fin=`${y}-${m}-${lastDay}`;
+  }else{ini=`${y}-${m}-01`;fin=`${y}-${m}-15`;}
+  if(Q('npInicio')) Q('npInicio').value=ini;
+  if(Q('npFin')) Q('npFin').value=fin;
+  if(Q('npPreview')) Q('npPreview').innerHTML=`<strong>Código generado:</strong> PZ-${y}${m}${tipo==='primera_quincena'?'01':tipo==='segunda_quincena'?'02':tipo==='mensual'?'00':'E'}`;
+}
+
+async function crearPeriodo(){
+  const empId=Q('selEmpresa').value;
+  if(!empId){toast('Esperando selección de empresa...','warn');await cargarEmpresas();return;}
+  const tipo=Q('npTipo').value;
+  const ini=Q('npInicio').value, fin=Q('npFin').value;
+  const desc=Q('npDesc').value;
+  if(!ini||!fin){toast('Complete fechas','warn');return;}
+  const y=ini.split('-')[0], m=ini.split('-')[1];
+  const suffix=tipo==='primera_quincena'?'01':tipo==='segunda_quincena'?'02':tipo==='mensual'?'00':'E'+Date.now().toString().slice(-3);
+  const codigo=`PZ-${y}${m}${suffix}`;
+  loader(true,'Creando período...');
+  // intentar insertar con campos que probablemente existen
+  // Columnas reales de periodos_planilla: nombre, tipo, fecha_inicio, fecha_fin, estado, empresa_id
+  const payload={
+    empresa_id: empId,
+    nombre: codigo,
+    tipo: tipo,
+    fecha_inicio: ini,
+    fecha_fin: fin,
+    estado: 'borrador'
+  };
+  const{data,error}=await sb.from('periodos_planilla').insert(payload).select().single();
+  loader(false);
+  if(error){toast('Error al crear período: '+error.message,'err');return;}
+  toast('Período creado','ok');
+  cerrarModal('modalNuevo');
+  await cargarPeriodos();
+}
+
+async function cerrarPeriodo(pid){
+  if(!confirm('¿Cerrar este período? No podrá modificarse.'))return;
+  await sb.from('periodos_planilla').update({estado:'cerrada'}).eq('id',pid);
+  toast('Período cerrado','ok');
+  await cargarPeriodos();
+}
+
+async function eliminarPeriodo(pid){
+  if(!confirm('¿Eliminar este período y su detalle?'))return;
+  loader(true,'Eliminando...');
+  // eliminar detalle primero (cualquier columna de FK posible)
+  await sb.from('planilla_detalle').delete().eq('planilla_id',pid);
+  await sb.from('periodos_planilla').delete().eq('id',pid);
+  loader(false);
+  toast('Período eliminado','ok');
+  await cargarPeriodos();
+}
+
+// ══════════════════════════════════
+//  CÁLCULO DE PLANILLA
+// ══════════════════════════════════
+async function calcularPlanilla(){
+  const pid=Q('calcPeriodo').value;
+  if(!pid){toast('Seleccione un período','warn');return;}
+  const periodo=periodos.find(p=>p.id==pid);
+  if(!periodo){toast('Período no encontrado','warn');return;}
+  const empFiltro=Q('calcEmpleado').value;
+  const dias=parseFloat(Q('calcDias').value)||15;
+  const hextra=parseFloat(Q('calcHExtra').value)||0;
+  loader(true,'Calculando planilla...');
+
+  // Obtener empleados a calcular
+  let lista=empFiltro?empleados.filter(e=>e.id==empFiltro):empleados.filter(e=>e.activo&&e.codigo);
+  if(!lista.length){loader(false);toast('No hay empleados con código asignado','warn');return;}
+
+  // Obtener ingresos y descuentos activos
+  const empIds=lista.map(e=>e.id);
+  const hoy=new Date().toISOString().split('T')[0];
+  const tipoPeriodo=periodo.tipo||periodo.tipo||'primera_quincena';
+
+  const{data:ingData}=await sb.from('emp_ingresos')
+    .select('*, cat_ingresos(*)')
+    .in('empleado_id',empIds)
+    .eq('activo',true)
+    .or(`vigencia_fin.is.null,vigencia_fin.gte.${hoy}`);
+
+  const{data:descData}=await sb.from('emp_descuentos')
+    .select('*, cat_descuentos(*)')
+    .in('empleado_id',empIds)
+    .eq('activo',true);
+
+  const ingMap={}, descMap={};
+  (ingData||[]).forEach(i=>{
+    const eid=i.empleado_id;
+    if(!ingMap[eid]) ingMap[eid]=[];
+    // periodicidad
+    const per=i.periodicidad||'ambas';
+    const aplica=per==='ambas'||per===tipoPeriodo||
+      (per==='mensual'&&tipoPeriodo==='mensual')||
+      (per==='primera_quincena'&&tipoPeriodo==='primera_quincena')||
+      (per==='segunda_quincena'&&tipoPeriodo==='segunda_quincena');
+    if(aplica) ingMap[eid].push(i);
+  });
+  (descData||[]).forEach(d=>{
+    const eid=d.empleado_id;
+    if(!descMap[eid]) descMap[eid]=[];
+    descMap[eid].push(d);
+  });
+
+  // Columnas dinámicas únicas
+  const colsIng=new Set(), colsDesc=new Set();
+  (ingData||[]).forEach(i=>colsIng.add(i.cat_ingresos?.nombre||'Ingreso'));
+  (descData||[]).forEach(d=>colsDesc.add(d.cat_descuentos?.nombre||'Descuento'));
+  colsDin={ing:[...colsIng],desc:[...colsDesc]};
+
+  calcData=[];
+  let totSal=0,totIng=0,totDev=0,totIGSS=0,totISR=0,totDescOtros=0,totLiq=0,totPat=0,totIrtra=0,totIntecap=0;
+
+  for(const emp of lista){
+    const salBase=parseFloat(emp.salario||0);
+    const salDia=tipoPeriodo==='mensual'?salBase:salBase/2;
+    const salCalc=dias*(salBase/(tipoPeriodo==='mensual'?30:15));
+
+    // Bonificación decreto 78-89 (Q250 quincena o Q500 mensual)
+    const bonDec=tipoPeriodo==='mensual'?500:250;
+
+    // Otros ingresos
+    const ings=ingMap[emp.id]||[];
+    let totalOtrosIng=0;
+    const ingDetalle={};
+    ings.forEach(i=>{
+      const nom=i.cat_ingresos?.nombre||'Ingreso';
+      const monto=parseFloat(i.monto||0);
+      ingDetalle[nom]=(ingDetalle[nom]||0)+monto;
+      if(!i.cat_ingresos?.columna_propia) totalOtrosIng+=monto;
+    });
+
+    // Devengado = salario + bonificación + otros ingresos
+    const devengado=salCalc+bonDec+totalOtrosIng;
+
+    // IGSS obrero sobre salario ordinario
+    const igssObrero=salCalc*IGSS_OBR;
+
+    // ISR mensual proyectado (Decreto 10-2012)
+    const anualProyectado=salCalc*12;
+    let isrMensual=0;
+    if(anualProyectado>300000) isrMensual=((anualProyectado-300000)*0.07+15000)/12;
+    else if(anualProyectado>48000) isrMensual=((anualProyectado-48000)*0.05)/12;
+    const isrPeriodo=tipoPeriodo==='mensual'?isrMensual:isrMensual/2;
+
+    // Otros descuentos
+    const descs=descMap[emp.id]||[];
+    let totalDescOtros=0;
+    const descDetalle={};
+    descs.forEach(d=>{
+      const nom=d.cat_descuentos?.nombre||'Descuento';
+      let monto=0;
+      if(d.tipo==='prestamo'||d.tipo==='loan'){
+        monto=parseFloat(d.cuota_mensual||d.monto_cuota||0);
+        if(tipoPeriodo!=='mensual') monto=monto/2;
+      }else{
+        monto=parseFloat(d.monto||0);
+        if(tipoPeriodo!=='mensual') monto=monto/2;
+      }
+      descDetalle[nom]=(descDetalle[nom]||0)+monto;
+      totalDescOtros+=monto;
+    });
+
+    const totalDesc=igssObrero+isrPeriodo+totalDescOtros;
+    const liquido=devengado-totalDesc;
+
+    // Patronal
+    const igssPat=salCalc*IGSS_PAT;
+    const irtra=salCalc*IRTRA;
+    const intecap=salCalc*INTECAP;
+
+    totSal+=salCalc; totIng+=totalOtrosIng; totDev+=devengado;
+    totIGSS+=igssObrero; totISR+=isrPeriodo; totDescOtros+=totalDescOtros;
+    totLiq+=liquido; totPat+=igssPat; totIrtra+=irtra; totIntecap+=intecap;
+
+    calcData.push({
+      emp,salCalc,bonDec,totalOtrosIng,ingDetalle,
+      devengado,igssObrero,isrPeriodo,totalDescOtros,descDetalle,
+      totalDesc,liquido,igssPat,irtra,intecap,dias,hextra
+    });
+  }
+
+  // Resumen
+  Q('resumenCalc').innerHTML=`
+    <div class="calc-row"><span>Empleados calculados</span><span class="calc-val">${calcData.length}</span></div>
+    <div class="calc-row"><span>Total devengado</span><span class="calc-val pos">${fQ(totDev)}</span></div>
+    <div class="calc-row"><span>IGSS obrero (4.83%)</span><span class="calc-val neg">${fQ(totIGSS)}</span></div>
+    <div class="calc-row"><span>ISR retenido</span><span class="calc-val neg">${fQ(totISR)}</span></div>
+    <div class="calc-row"><span>Otros descuentos</span><span class="calc-val neg">${fQ(totDescOtros)}</span></div>
+    <div class="calc-row total"><span>Líquido a pagar</span><span class="calc-val pos">${fQ(totLiq)}</span></div>
+    <hr style="margin:10px 0">
+    <div class="calc-row sub"><span>IGSS patronal (12.67%)</span><span class="calc-val">${fQ(totPat)}</span></div>
+    <div class="calc-row sub"><span>IRTRA (1%)</span><span class="calc-val">${fQ(totIrtra)}</span></div>
+    <div class="calc-row sub"><span>INTECAP (1%)</span><span class="calc-val">${fQ(totIntecap)}</span></div>`;
+
+  periodoActivo={id:pid,...periodo,totSal,totDev,totIGSS,totISR,totDescOtros,totLiq,totPat};
+  renderTablaDetalle();
+  Q('detalleTitle').textContent=`Detalle: ${periodo.codigo||periodo.nombre||pid} (${calcData.length} empleados)`;
+  Q('cardDetalle').style.display='block';
+  Q('btnGuardar').disabled=false;
+  Q('btnRecalc').disabled=false;
+  loader(false);
+  toast('Planilla calculada','ok');
+}
+
+function renderTablaDetalle(){
+  // Cabeceras
+  const ingCols=colsDin.ing||[], descCols=colsDin.desc||[];
+  let thHtml=`<tr>
+    <th>Código</th><th>Nombre</th><th>Días</th><th>Salario</th><th>Bon. Ley</th>`;
+  ingCols.forEach(c=>`<th>${c}</th>`);
+  thHtml+=ingCols.map(c=>`<th>${c}</th>`).join('');
+  thHtml+=`<th>Devengado</th><th>IGSS Obrero</th><th>ISR</th>`;
+  thHtml+=descCols.map(c=>`<th>${c}</th>`).join('');
+  thHtml+=`<th>Otros Desc.</th><th style="color:var(--verde)">Líquido</th><th>IGSS Pat.</th></tr>`;
+  Q('theadDetalle').innerHTML=thHtml;
+
+  // Filas
+  let totSal=0,totBon=0,totIng={},totDev=0,totIGSS=0,totISR=0,totDesc={},totOtroD=0,totLiq=0,totPat=0;
+  ingCols.forEach(c=>totIng[c]=0); descCols.forEach(c=>totDesc[c]=0);
+
+  const rows=calcData.map(r=>{
+    totSal+=r.salCalc; totBon+=r.bonDec; totDev+=r.total_devengado;
+    totIGSS+=r.igssObrero; totISR+=r.isrPeriodo; totOtroD+=r.totalDescOtros;
+    totLiq+=r.liquido; totPat+=r.igssPat;
+    ingCols.forEach(c=>totIng[c]+=(r.ingDetalle[c]||0));
+    descCols.forEach(c=>totDesc[c]+=(r.descDetalle[c]||0));
+    let tr=`<tr>
+      <td><span class="badge bg-gray mono">${r.emp.codigo}</span></td>
+      <td><strong>${r.emp.nombre} ${r.emp.apellido}</strong></td>
+      <td>${r.dias}</td>
+      <td class="mono">${fQ(r.salCalc)}</td>
+      <td class="mono">${fQ(r.bonDec)}</td>`;
+    tr+=ingCols.map(c=>`<td class="mono">${fQ(r.ingDetalle[c]||0)}</td>`).join('');
+    tr+=`<td class="mono fw700">${fQ(r.total_devengado)}</td>
+      <td class="mono t-red">${fQ(r.igssObrero)}</td>
+      <td class="mono t-red">${fQ(r.isrPeriodo)}</td>`;
+    tr+=descCols.map(c=>`<td class="mono t-red">${fQ(r.descDetalle[c]||0)}</td>`).join('');
+    tr+=`<td class="mono t-red">${fQ(r.totalDescOtros)}</td>
+      <td class="mono fw700 t-green">${fQ(r.liquido_total)}</td>
+      <td class="mono">${fQ(r.igssPat)}</td>
+      <td><button class="btn btn-outline btn-xs" onclick="abrirRecibos('${r.emp.id}')">Recibo</button></td>
+    </tr>`;
+    return tr;
+  }).join('');
+  Q('tbodyDetalle').innerHTML=rows;
+
+  let tf=`<tr><td colspan="4"><strong>TOTALES (${calcData.length} empleados)</strong></td>
+    <td class="mono">${fQ(totBon)}</td>`;
+  tf+=ingCols.map(c=>`<td class="mono">${fQ(totIng[c])}</td>`).join('');
+  tf+=`<td class="mono">${fQ(totDev)}</td>
+    <td class="mono t-red">${fQ(totIGSS)}</td>
+    <td class="mono t-red">${fQ(totISR)}</td>`;
+  tf+=descCols.map(c=>`<td class="mono t-red">${fQ(totDesc[c])}</td>`).join('');
+  tf+=`<td class="mono t-red">${fQ(totOtroD)}</td>
+    <td class="mono t-green fw700">${fQ(totLiq)}</td>
+    <td class="mono">${fQ(totPat)}</td><td></td></tr>`;
+  Q('tfootDetalle').innerHTML=tf;
+}
+
+// ══════════════════════════════════
+//  GUARDAR PLANILLA — ROBUSTO
+//  Detecta columna FK automáticamente
+// ══════════════════════════════════
+async function guardarPlanilla(){
+  if(!calcData.length){toast('Primero calcule','warn');return;}
+  const pid=Q('calcPeriodo').value;
+  const periodo=periodos.find(p=>p.id==pid);
+  loader(true,'Guardando planilla...');
+
+  // 1. Actualizar totales en el período
+  // Columnas reales de periodos_planilla para actualizar
+  const upd={
+    estado: 'calculada',
+    liquido_total: calcData.reduce((s,r)=>s+r.liquido_total_total_total,0),
+    total_bruto: calcData.reduce((s,r)=>s+r.total_devengado,0),
+    total_igss_obrero: calcData.reduce((s,r)=>s+r.igssObrero,0),
+    total_igss_patronal: calcData.reduce((s,r)=>s+r.igssPat,0),
+    total_isr: calcData.reduce((s,r)=>s+r.isrPeriodo,0),
+    total_descuentos: calcData.reduce((s,r)=>s+r.totalDesc||r.igssObrero+r.isrPeriodo+r.totalDescOtros,0)
+  };
+  const{error:ePeriodo}=await sb.from('periodos_planilla').update(upd).eq('id',pid);
+  if(ePeriodo) console.warn('Update período:',ePeriodo.message);
+
+  // 2. Detectar columna FK de periodo en planilla_detalle
+  // Primero intentamos leer la estructura haciendo una query de prueba
+  let fkCol='planilla_id'; // default
+  const testCols=['planilla_id','planilla_id','planilla_id','periodos_planilla_id'];
+  
+  // Hacemos delete con cada columna para ver cuál funciona (no fallará si no hay filas)
+  // Mejor: intentamos insertar un registro de prueba y detectar el error
+  const{error:testErr}=await sb.from('planilla_detalle')
+    .select('id').eq('planilla_id',pid).limit(1);
+  if(!testErr) fkCol='planilla_id';
+  else{
+    const{error:t2}=await sb.from('planilla_detalle')
+      .select('id').eq('planilla_id',pid).limit(1);
+    if(!t2) fkCol='planilla_id';
+    else fkCol='planilla_id'; // fallback
+  }
+
+  // 3. Eliminar detalle previo
+  await sb.from('planilla_detalle').delete().eq(fkCol,pid);
+
+  // 4. Insertar nuevo detalle
+  let errores=0;
+  for(const r of calcData){
+    // Columnas reales de planilla_detalle según Supabase
+    const base={
+      planilla_id: pid,
+      empleado_id: r.emp.id,
+      salario_base: r.salCalc,
+      bonificación: r.bonDec,
+      horas_extra: r.hextra||0,
+      otros_ingresos: r.totalOtrosIng,
+      ausencias_dias: 0,
+      total_devengado: r.total_devengado,
+      igss_obrero: r.igssObrero,
+      isr: r.isrPeriodo,
+      liquido_total: r.liquido_total,
+      igss_patronal: r.igssPat,
+      irtra: r.irtra||0,
+      intercap: r.intecap||0,
+      columna_de_ingresos: r.ingDetalle||{},
+      descuentos_columna: r.descDetalle||{}
+    };
+    const{error:eRow}=await sb.from('planilla_detalle').insert(base);
+    if(eRow){ errores++; console.error('Error fila:',eRow.message); }
+  }
+
+  await cargarPeriodos();
+  loader(false);
+  if(errores>0) toast(`Guardado con ${errores} advertencia(s)`, 'warn');
+  else toast('Planilla guardada correctamente','ok');
+}
+
+// ══════════════════════════════════
+//  VER DETALLE PERÍODO (desde lista)
+// ══════════════════════════════════
+async function verDetallePeriodo(pid){
+  const periodo=periodos.find(p=>p.id==pid);
+  if(!periodo) return;
+  modalPeriodoId=pid;
+  loader(true,'Cargando detalle...');
+
+  // FK real es planilla_id
+  const{data:rows,error}=await sb.from('planilla_detalle')
+    .select('*, empleados(codigo,nombre,apellido,salario,cat_departamentos(nombre),cat_puestos(nombre))')
+    .eq('planilla_id',pid);
+
+  loader(false);
+  if(error){toast('Error al cargar detalle: '+error.message,'err');return;}
+  if(!rows||!rows.length){toast('No hay detalle guardado para este período','warn');return;}
+
+  modalPeriodoData=rows;
+  Q('detPTitle').textContent=`Detalle — ${periodo.codigo||periodo.nombre||pid}`;
+  Q('detPSub').textContent=`${tipoLabel(periodo.tipo||periodo.tipo)} · ${periodo.fecha_inicio} al ${periodo.fecha_fin}`;
+
+  // Stats
+  const totEmp=rows.length;
+  const totDev=rows.reduce((s,r)=>s+parseFloat(r.total_devengado||0),0);
+  const totIGSS=rows.reduce((s,r)=>s+parseFloat(r.igss_obrero||0),0);
+  const totISR=rows.reduce((s,r)=>s+parseFloat(r.isr||0),0);
+  const totLiq=rows.reduce((s,r)=>s+parseFloat(r.liquido_total||0),0);
+  Q('dps0').textContent=totEmp;
+  Q('dps1').textContent=fQ(totDev);
+  Q('dps2').textContent=fQ(totIGSS);
+  Q('dps3').textContent=fQ(totISR);
+  Q('dps4').textContent=fQ(totLiq);
+
+  // Tabla
+  Q('detPThead').innerHTML=`<tr>
+    <th>Código</th><th>Empleado</th><th>Depto</th><th>Días</th>
+    <th>Salario</th><th>Bon. Ley</th><th>Otros Ing.</th><th>Devengado</th>
+    <th>IGSS Obrero</th><th>ISR</th><th>Otros Desc.</th>
+    <th style="color:var(--verde)">Líquido</th><th>IGSS Pat.</th><th></th>
+  </tr>`;
+
+  let tfSal=0,tfDev=0,tfIGSS=0,tfISR=0,tfDescO=0,tfLiq=0,tfPat=0,tfBon=0,tfIng=0;
+  Q('detPTbody').innerHTML=rows.map(r=>{
+    const sal=parseFloat(r.salario_base||0), bon=parseFloat(r.bonificación||0);
+    const ing=parseFloat(r.otros_ingresos||0), dev=parseFloat(r.total_devengado||0);
+    const igss=parseFloat(r.igss_obrero||0), isr=parseFloat(r.isr||0);
+    const desc=parseFloat(r.igss_obrero||0)+parseFloat(r.isr||0), liq=parseFloat(r.liquido_total||0);
+    const pat=parseFloat(r.igss_patronal||0);
+    tfSal+=sal;tfBon+=bon;tfIng+=ing;tfDev+=dev;tfIGSS+=igss;tfISR+=isr;tfDescO+=desc;tfLiq+=liq;tfPat+=pat;
+    return`<tr>
+      <td><span class="badge bg-gray mono">${r.empleados?.codigo||'—'}</span></td>
+      <td><strong>${r.empleados?.nombre||'—'} ${r.empleados?.apellido||''}</strong></td>
+      <td>${r.empleados?.cat_departamentos?.nombre||'—'}</td>
+      <td>${r.ausencias_dias||'—'}</td>
+      <td class="mono">${fQ(sal)}</td>
+      <td class="mono">${fQ(bon)}</td>
+      <td class="mono">${fQ(ing)}</td>
+      <td class="mono fw700">${fQ(dev)}</td>
+      <td class="mono t-red">${fQ(igss)}</td>
+      <td class="mono t-red">${fQ(isr)}</td>
+      <td class="mono t-red">${fQ(desc)}</td>
+      <td class="mono fw700 t-green">${fQ(liq)}</td>
+      <td class="mono">${fQ(pat)}</td>
+      <td><button class="btn btn-outline btn-xs" onclick="abrirReciboDesdeRow(${JSON.stringify(r).replace(/"/g,'&quot;')})">Recibo</button></td>
+    </tr>`;
+  }).join('');
+
+  Q('detPTfoot').innerHTML=`<tr>
+    <td colspan="4"><strong>TOTALES (${rows.length})</strong></td>
+    <td class="mono">${fQ(tfSal)}</td><td class="mono">${fQ(tfBon)}</td>
+    <td class="mono">${fQ(tfIng)}</td><td class="mono fw700">${fQ(tfDev)}</td>
+    <td class="mono t-red">${fQ(tfIGSS)}</td><td class="mono t-red">${fQ(tfISR)}</td>
+    <td class="mono t-red">${fQ(tfDescO)}</td>
+    <td class="mono fw700 t-green">${fQ(tfLiq)}</td>
+    <td class="mono">${fQ(tfPat)}</td><td></td>
+  </tr>`;
+
+  abrirModal('modalDetPeriodo');
+}
+
+// ══════════════════════════════════
+//  HISTORIAL
+// ══════════════════════════════════
+async function cargarHistorial(){
+  const empId=Q('selEmpresa').value;
+  if(!empId)return;
+  const tbody=Q('tbodyHistorial');
+  tbody.innerHTML='<tr><td colspan="9"><div class="loader-box" style="justify-content:center"><div class="spinner"></div></div></td></tr>';
+  
+  const lista=periodos;
+  if(!lista.length){
+    tbody.innerHTML='<tr><td colspan="9"><div class="empty"><div class="empty-ico">📋</div><p>Sin historial</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML=lista.map(p=>{
+    const tipo=tipoLabel(p.tipo);
+    const estado=p.estado||'borrador';
+    const dev=parseFloat(p.total_bruto||0);
+    const igss=parseFloat(p.total_igss_obrero||0);
+    const isr=parseFloat(p.total_isr||0);
+    const liq=parseFloat(p.liquido_total||0);
+    return`<tr>
+      <td><strong class="mono">${p.nombre||p.id}</strong></td>
+      <td><span class="badge bg-blue">${tipo}</span></td>
+      <td class="mono">${fQ(dev)}</td>
+      <td class="mono t-red">${fQ(igss)}</td>
+      <td class="mono t-red">${fQ(isr)}</td>
+      <td class="mono t-red">Q 0.00</td>
+      <td class="mono fw700 t-green">${fQ(liq)}</td>
+      <td><span class="badge ${estadoBadge(estado)}">${estado}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="calcularDesdePeriodo('${p.id}')">Recalcular</button>
+        <button class="btn btn-green btn-sm" onclick="verDetallePeriodo('${p.id}')">Ver</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════
+//  RECIBOS DE PAGO
+// ══════════════════════════════════
+function abrirRecibos(tipo){
+  // tipo = 'todos' o empId
+  const emp=Q('selEmpresa').value;
+  const pid=Q('calcPeriodo').value;
+  const periodo=periodos.find(p=>p.id==pid)||{};
+  const empresa=empresas.find(e=>e.id==emp)||{};
+  let filas=tipo==='todos'?calcData:calcData.filter(r=>r.emp.id==tipo);
+  if(!filas.length){toast('No hay datos calculados','warn');return;}
+
+  Q('reciboTitle').textContent=tipo==='todos'?`Recibos de pago — ${filas.length} empleados`:'Recibo de pago';
+  Q('reciboSub').textContent=`${periodo.codigo||''} · ${tipoLabel(periodo.tipo||periodo.tipo)}`;
+  Q('contenedorRecibos').innerHTML=filas.map(r=>generarReciboHTML(r,empresa,periodo)).join('');
+  abrirModal('modalRecibos');
+}
+
+function abrirRecibosModal(){
+  // Desde modal de detalle período — re-usar modalPeriodoData
+  if(!modalPeriodoData.length){toast('Sin datos','warn');return;}
+  const empId=Q('selEmpresa').value;
+  const empresa=empresas.find(e=>e.id==empId)||{};
+  const pid=modalPeriodoId;
+  const periodo=periodos.find(p=>p.id==pid)||{};
+  Q('reciboTitle').textContent=`Recibos — ${modalPeriodoData.length} empleados`;
+  Q('reciboSub').textContent=`${periodo.codigo||''} · ${tipoLabel(periodo.tipo||periodo.tipo)}`;
+  Q('contenedorRecibos').innerHTML=modalPeriodoData.map(r=>{
+    const row={
+      emp:r.empleados||{},
+      salCalc:parseFloat(r.salario_base||0),
+      bonDec:parseFloat(r.bonificación||0),
+      totalOtrosIng:parseFloat(r.otros_ingresos||0),
+      ingDetalle:safeJSON(r.columna_de_ingresos),
+      devengado:parseFloat(r.total_devengado||0),
+      igssObrero:parseFloat(r.igss_obrero||0),
+      isrPeriodo:parseFloat(r.isr||0),
+      totalDescOtros:parseFloat(r.total_descuentos||0),
+      descDetalle:safeJSON(r.descuentos_columna),
+      liquido:parseFloat(r.liquido||0),
+      igssPat:parseFloat(r.igss_patronal||0),
+      dias:r.ausencias_dias||15
+    };
+    return generarReciboHTML(row,empresa,periodo);
+  }).join('');
+  cerrarModal('modalDetPeriodo');
+  abrirModal('modalRecibos');
+}
+
+function abrirReciboDesdeRow(rStr){
+  // rStr llega como string serializado en el atributo data
+  try{
+    const r=typeof rStr==='string'?JSON.parse(rStr):rStr;
+    const emp=Q('selEmpresa').value;
+    const empresa=empresas.find(e=>e.id==emp)||{};
+    const pid=modalPeriodoId;
+    const periodo=periodos.find(p=>p.id==pid)||{};
+    const row={
+      emp:r.empleados||{},
+      salCalc:parseFloat(r.salario_base||0),
+      bonDec:parseFloat(r.bonificación||0),
+      totalOtrosIng:parseFloat(r.otros_ingresos||0),
+      ingDetalle:safeJSON(r.columna_de_ingresos),
+      devengado:parseFloat(r.total_devengado||0),
+      igssObrero:parseFloat(r.igss_obrero||0),
+      isrPeriodo:parseFloat(r.isr||0),
+      totalDescOtros:parseFloat(r.total_descuentos||0),
+      descDetalle:safeJSON(r.descuentos_columna),
+      liquido:parseFloat(r.liquido||0),
+      igssPat:parseFloat(r.igss_patronal||0),
+      dias:r.ausencias_dias||15
+    };
+    Q('reciboTitle').textContent='Recibo de pago';
+    Q('reciboSub').textContent=`${periodo.codigo||''} · ${tipoLabel(periodo.tipo||periodo.tipo)}`;
+    Q('contenedorRecibos').innerHTML=generarReciboHTML(row,empresa,periodo);
+    cerrarModal('modalDetPeriodo');
+    abrirModal('modalRecibos');
+  }catch(e){toast('Error al generar recibo','err');}
+}
+
+function safeJSON(v){
+  try{return typeof v==='string'?JSON.parse(v):(v||{});}catch{return{};}
+}
+
+function generarReciboHTML(r, empresa, periodo){
+  const emp=r.emp||{};
+  const nombreEmp=`${emp.nombre||'—'} ${emp.apellido||''}`.trim();
+  const tipoPeriodo=tipoLabel(periodo.tipo||periodo.tipo);
+  const fechaHoy=new Date().toLocaleDateString('es-GT');
+
+  const ingRows=Object.entries(r.ingDetalle||{}).map(([k,v])=>
+    `<tr><td>${k}</td><td></td><td class="mono">${fQ(v)}</td></tr>`).join('');
+
+  const descRows=Object.entries(r.descDetalle||{}).map(([k,v])=>
+    `<tr><td>${k}</td><td></td><td class="mono t-red">${fQ(v)}</td></tr>`).join('');
+
+  return`<div class="recibo">
+    <div class="recibo-head">
+      <div>
+        <div class="recibo-head-logo">${(empresa?getNombreEmpresa(empresa):'ProZen')}</div>
+        <div style="font-size:11px;opacity:.8;margin-top:3px">Recibo de pago de salario</div>
+      </div>
+      <div class="recibo-head-info">
+        <div><strong>${periodo.codigo||'—'}</strong></div>
+        <div>${tipoPeriodo}</div>
+        <div>${periodo.fecha_inicio||'—'} al ${periodo.fecha_fin||'—'}</div>
+        <div>Emitido: ${fechaHoy}</div>
+      </div>
+    </div>
+    <div class="recibo-body">
+      <div class="recibo-emp">
+        <div class="recibo-field"><div class="recibo-field-label">Código</div><div class="recibo-field-val">${emp.codigo||'—'}</div></div>
+        <div class="recibo-field"><div class="recibo-field-label">Nombre completo</div><div class="recibo-field-val">${nombreEmp}</div></div>
+        <div class="recibo-field"><div class="recibo-field-label">Puesto</div><div class="recibo-field-val">${emp.cat_puestos?.nombre||'—'}</div></div>
+        <div class="recibo-field"><div class="recibo-field-label">Departamento</div><div class="recibo-field-val">${emp.cat_departamentos?.nombre||'—'}</div></div>
+        <div class="recibo-field"><div class="recibo-field-label">Días laborados</div><div class="recibo-field-val">${r.dias}</div></div>
+        <div class="recibo-field"><div class="recibo-field-label">Salario mensual</div><div class="recibo-field-val">${fQ(emp.salario||r.salCalc)}</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <!-- INGRESOS -->
+        <div>
+          <table class="recibo-table">
+            <thead><tr><th>Ingresos</th><th></th><th>Monto</th></tr></thead>
+            <tbody>
+              <tr><td>Salario (${r.dias} días)</td><td></td><td class="mono">${fQ(r.salCalc)}</td></tr>
+              <tr><td>Bonificación Decreto 78-89</td><td></td><td class="mono">${fQ(r.bonDec)}</td></tr>
+              ${ingRows}
+            </tbody>
+            <tfoot><tr><td colspan="2"><strong>Total ingresos</strong></td><td class="mono t-green">${fQ(r.total_devengado)}</td></tr></tfoot>
+          </table>
+        </div>
+        <!-- DESCUENTOS -->
+        <div>
+          <table class="recibo-table">
+            <thead><tr><th>Descuentos</th><th></th><th>Monto</th></tr></thead>
+            <tbody>
+              <tr><td>IGSS obrero (4.83%)</td><td></td><td class="mono t-red">${fQ(r.igssObrero)}</td></tr>
+              <tr><td>ISR retenido</td><td></td><td class="mono t-red">${fQ(r.isrPeriodo)}</td></tr>
+              ${descRows}
+            </tbody>
+            <tfoot><tr><td colspan="2"><strong>Total descuentos</strong></td><td class="mono t-red">${fQ(r.totalDesc||r.igssObrero+r.isrPeriodo+r.totalDescOtros)}</td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="recibo-total">
+        <div class="recibo-total-label">💰 LÍQUIDO A RECIBIR</div>
+        <div class="recibo-total-val">${fQ(r.liquido_total)}</div>
+      </div>
+      <div style="background:var(--gris);border-radius:6px;padding:8px 12px;margin-top:10px;font-size:11px;color:var(--gris-t)">
+        IGSS Patronal: ${fQ(r.igssPat)} &nbsp;|&nbsp; IRTRA: ${fQ(r.irtra||0)} &nbsp;|&nbsp; INTECAP: ${fQ(r.intecap||0)}
+      </div>
+      <div class="recibo-firma">
+        <div><div class="recibo-firma-line">Firma del colaborador</div></div>
+        <div><div class="recibo-firma-line">Autorizado por</div></div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function imprimirRecibos(){
+  const cont=Q('contenedorRecibos').innerHTML;
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0}
+      body{font-family:'DM Sans',sans-serif;background:#fff;font-size:13px;padding:20px}
+      .recibo{border:1px solid #e2e4e7;border-radius:8px;overflow:hidden;margin-bottom:20px;page-break-inside:avoid}
+      .recibo-head{background:#1D6F42;color:#fff;padding:14px 18px;display:flex;justify-content:space-between}
+      .recibo-head-logo{font-size:16px;font-weight:700}
+      .recibo-head-info{text-align:right;font-size:11px;opacity:.9}
+      .recibo-body{padding:14px 18px}
+      .recibo-emp{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed #e2e4e7}
+      .recibo-field-label{font-size:10px;font-weight:600;text-transform:uppercase;color:#6b7280;letter-spacing:.04em}
+      .recibo-field-val{font-size:12px;font-weight:500}
+      table{width:100%;border-collapse:collapse}
+      th{font-size:10px;font-weight:600;text-transform:uppercase;color:#6b7280;padding:4px 6px;background:#f5f6f7;border-bottom:1px solid #e2e4e7}
+      td{padding:5px 6px;font-size:11px;border-bottom:1px solid #f0f0f0}
+      tfoot td{font-weight:700;background:#f5f6f7;border-top:1px solid #e2e4e7}
+      .recibo-total{background:#e8f5ee;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+      .recibo-total-label{font-size:12px;font-weight:600;color:#1D6F42}
+      .recibo-total-val{font-size:18px;font-weight:700;color:#1D6F42;font-family:'DM Mono',monospace}
+      .mono{font-family:'DM Mono',monospace;font-size:11px}
+      .t-red{color:#dc2626}.t-green{color:#1D6F42}
+      .recibo-firma{margin-top:12px;padding-top:12px;border-top:1px dashed #e2e4e7;display:grid;grid-template-columns:1fr 1fr;gap:20px;font-size:10px;color:#6b7280}
+      .recibo-firma-line{border-top:1px solid #111;padding-top:3px;text-align:center;margin-top:18px}
+      @media print{body{padding:10px}.recibo{margin-bottom:10px}}
+    </style>
+  </head><body>${cont}</body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),500);
+}
+
+// ══════════════════════════════════
+//  EXPORTAR EXCEL
+// ══════════════════════════════════
+function exportarExcel(){
+  if(!calcData.length){toast('Primero calcule','warn');return;}
+  const periodo=periodos.find(p=>p.id==Q('calcPeriodo').value)||{};
+  const ingCols=colsDin.ing||[], descCols=colsDin.desc||[];
+  const headers=['Código','Nombre','Departamento','Puesto','Días','Salario Base','Bon. Decreto',
+    ...ingCols,'Total Ingresos Otros','Devengado','IGSS Obrero (4.83%)','ISR Retenido',
+    ...descCols,'Total Otros Descuentos','Total Descuentos','Líquido','IGSS Patronal (12.67%)','IRTRA (1%)','INTECAP (1%)'];
+
+  const rows=calcData.map(r=>[
+    r.emp.codigo, `${r.emp.nombre} ${r.emp.apellido}`,
+    r.emp.cat_departamentos?.nombre||'', r.emp.cat_puestos?.nombre||'',
+    r.dias, r.salCalc, r.bonDec,
+    ...ingCols.map(c=>r.ingDetalle[c]||0),
+    r.totalOtrosIng, r.total_devengado, r.igssObrero, r.isrPeriodo,
+    ...descCols.map(c=>r.descDetalle[c]||0),
+    r.totalDescOtros, r.totalDesc||r.igssObrero+r.isrPeriodo+r.totalDescOtros,
+    r.liquido_total, r.igssPat, r.irtra||0, r.intecap||0
+  ]);
+
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  // Estilo de cabecera
+  const wscols=headers.map(()=>({wch:14}));
+  ws['!cols']=wscols;
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Planilla');
+  // Hoja patronal
+  const headPat=['Código','Nombre','Salario Base','IGSS Patronal','IRTRA','INTECAP','Total Costo'];
+  const rowsPat=calcData.map(r=>[
+    r.emp.codigo,`${r.emp.nombre} ${r.emp.apellido}`,
+    r.salCalc,r.igssPat,r.irtra||0,r.intecap||0,
+    r.salCalc+(r.igssPat||0)+(r.irtra||0)+(r.intecap||0)
+  ]);
+  const ws2=XLSX.utils.aoa_to_sheet([headPat,...rowsPat]);
+  XLSX.utils.book_append_sheet(wb,ws2,'Cuotas Patronales');
+  XLSX.writeFile(wb,`Planilla_${periodo.codigo||'planilla'}.xlsx`);
+  toast('Excel generado','ok');
+}
+
+function exportarHistorialExcel(){
+  const headers=['Período','Tipo','Total Devengado','IGSS Obrero','ISR','Líquido','Estado'];
+  const rows=periodos.map(p=>[
+    p.nombre||p.id,
+    tipoLabel(p.tipo||p.tipo),
+    parseFloat(p.total_devengado||0),
+    parseFloat(p.total_igss_obrero||0),
+    parseFloat(p.total_isr||0),
+    parseFloat(p.liquido_total||0),
+    p.estado||'borrador'
+  ]);
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Historial');
+  XLSX.writeFile(wb,'Historial_Planillas.xlsx');
+  toast('Excel exportado','ok');
+}
+
+function exportarExcelModal(){
+  if(!modalPeriodoData.length){toast('Sin datos','warn');return;}
+  const periodo=periodos.find(p=>p.id==modalPeriodoId)||{};
+  const headers=['Código','Nombre','Días','Salario Base','Bon. Decreto','Otros Ingresos','Devengado','IGSS Obrero','ISR','Otros Desc.','Líquido','IGSS Patronal'];
+  const rows=modalPeriodoData.map(r=>[
+    r.empleados?.codigo||'',`${r.empleados?.nombre||''} ${r.empleados?.apellido||''}`,
+    15,parseFloat(r.salario_base||0),parseFloat(r.bonificación||0),
+    parseFloat(r.otros_ingresos||0),parseFloat(r.total_devengado||0),parseFloat(r.igss_obrero||0),
+    parseFloat(r.isr||0),parseFloat(r.igss_obrero||0)+parseFloat(r.isr||0),parseFloat(r.liquido_total||0),
+    parseFloat(r.igss_patronal||0)
+  ]);
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Planilla');
+  XLSX.writeFile(wb,`Planilla_${periodo.codigo||'detalle'}.xlsx`);
+  toast('Excel generado','ok');
+}
+
+// ══════════════════════════════════
+//  EXPORTAR PDF
+// ══════════════════════════════════
+function exportarPDF(){
+  if(!calcData.length){toast('Primero calcule','warn');return;}
+  const periodo=periodos.find(p=>p.id==Q('calcPeriodo').value)||{};
+  const empresa=empresas.find(e=>e.id==Q('selEmpresa').value)||{};
+  generarPDFPlanilla(calcData,periodo,empresa,'planilla');
+}
+function exportarPDFModal(){
+  if(!modalPeriodoData.length){toast('Sin datos','warn');return;}
+  const periodo=periodos.find(p=>p.id==modalPeriodoId)||{};
+  const empresa=empresas.find(e=>e.id==Q('selEmpresa').value)||{};
+  const rows=modalPeriodoData.map(r=>({
+    emp:r.empleados||{},
+    salCalc:parseFloat(r.salario_base||0),bonDec:parseFloat(r.bonificación||0),
+    totalOtrosIng:parseFloat(r.otros_ingresos||0),devengado:parseFloat(r.total_devengado||0),
+    igssObrero:parseFloat(r.igss_obrero||0),isrPeriodo:parseFloat(r.isr||0),
+    totalDescOtros:parseFloat(r.total_descuentos||0),liquido:parseFloat(r.liquido||0),
+    igssPat:parseFloat(r.igss_patronal||0),dias:r.ausencias_dias||15,
+    ingDetalle:{},descDetalle:{}
+  }));
+  generarPDFPlanilla(rows,periodo,empresa,'detalle_modal');
+}
+
+function generarPDFPlanilla(data,periodo,empresa,nombre){
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'landscape',unit:'mm',format:'legal'});
+  
+  // Header
+  doc.setFillColor(29,111,66);
+  doc.rect(0,0,360,22,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.text((empresa?getNombreEmpresa(empresa):'ProZen — Nómina'),14,10);
+  doc.setFontSize(9);doc.setFont('helvetica','normal');
+  doc.text(`Planilla: ${periodo.codigo||'—'} | ${tipoLabel(periodo.tipo||periodo.tipo)} | ${periodo.fecha_inicio||''} al ${periodo.fecha_fin||''}`,14,16);
+  doc.text(`Generado: ${new Date().toLocaleDateString('es-GT')}`,300,16,'right');
+  
+  doc.setTextColor(0,0,0);
+  const headers=[['Código','Nombre','Días','Salario','Bon. Ley','Devengado','IGSS Obr.','ISR','Otros Desc.','Líquido','IGSS Pat.']];
+  const rows=data.map(r=>[
+    r.emp.codigo||'—',`${r.emp.nombre||'—'} ${r.emp.apellido||''}`,r.dias,
+    `Q ${fmt(r.salCalc)}`,`Q ${fmt(r.bonDec)}`,`Q ${fmt(r.total_devengado)}`,
+    `Q ${fmt(r.igssObrero)}`,`Q ${fmt(r.isrPeriodo)}`,`Q ${fmt(r.totalDescOtros)}`,
+    `Q ${fmt(r.liquido_total)}`,`Q ${fmt(r.igssPat)}`
+  ]);
+  // totales
+  const totRow=['','TOTALES','',
+    `Q ${fmt(data.reduce((s,r)=>s+r.salCalc,0))}`,
+    `Q ${fmt(data.reduce((s,r)=>s+r.bonDec,0))}`,
+    `Q ${fmt(data.reduce((s,r)=>s+r.total_devengado,0))}`,
+    `Q ${fmt(data.reduce((s,r)=>s+r.igssObrero,0))}`,
+    `Q ${fmt(data.reduce((s,r)=>s+r.isrPeriodo,0))}`,
+    `Q ${fmt(data.reduce((s,r)=>s+r.totalDescOtros,0))}`,
+    `Q ${fmt(data.reduce((s,r)=>s+r.liquido_total_total_total,0))}`,
+    `Q ${fmt(data.reduce((s,r)=>s+r.igssPat,0))}`
+  ];
+
+  doc.autoTable({
+    head:headers, body:[...rows,totRow],
+    startY:26, margin:{left:14,right:14},
+    styles:{fontSize:7,cellPadding:2,font:'helvetica'},
+    headStyles:{fillColor:[29,111,66],textColor:255,fontStyle:'bold'},
+    footStyles:{fillColor:[240,240,240],fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[248,250,248]},
+    didParseCell(data){
+      if(data.row.index===rows.length){
+        data.cell.styles.fillColor=[29,111,66];
+        data.cell.styles.textColor=255;
+        data.cell.styles.fontStyle='bold';
+      }
+    }
+  });
+
+  // Footer
+  const pY=doc.internal.pageSize.height-8;
+  doc.setFontSize(7);doc.setTextColor(150);
+  doc.text('ProZen — Sistema de Nómina Guatemala | Documento generado automáticamente',14,pY);
+  doc.text(`Página 1 de 1`,300,pY,'right');
+  doc.save(`Planilla_${periodo.codigo||nombre}.pdf`);
+  toast('PDF generado','ok');
+}
+
+function exportarRecibosPDF(){
+  const emp=Q('selEmpresa').value;
+  const pid=Q('calcPeriodo').value||modalPeriodoId;
+  const periodo=periodos.find(p=>p.id==pid)||{};
+  const empresa=empresas.find(e=>e.id==emp)||{};
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'letter'});
+  
+  let data=calcData.length?calcData:modalPeriodoData.map(r=>({
+    emp:r.empleados||{},
+    salCalc:parseFloat(r.salario_base||0),bonDec:parseFloat(r.bonificación||0),
+    totalOtrosIng:parseFloat(r.otros_ingresos||0),ingDetalle:safeJSON(r.columna_de_ingresos),
+    devengado:parseFloat(r.total_devengado||0),igssObrero:parseFloat(r.igss_obrero||0),
+    isrPeriodo:parseFloat(r.isr||0),totalDescOtros:parseFloat(r.total_descuentos||0),
+    descDetalle:safeJSON(r.descuentos_columna),
+    liquido:parseFloat(r.liquido||0),igssPat:parseFloat(r.igss_patronal||0),dias:r.ausencias_dias||15,
+    totalDesc:parseFloat(r.liquido_total||0)
+  }));
+
+  if(!data.length){toast('Sin datos para recibos','warn');return;}
+
+  data.forEach((r,idx)=>{
+    if(idx>0) doc.addPage();
+    const emp2=r.emp||{};
+    // Header recibo
+    doc.setFillColor(29,111,66);doc.rect(0,0,216,18,'F');
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(12);doc.setFont('helvetica','bold');
+    doc.text((empresa?getNombreEmpresa(empresa):'ProZen'),14,8);
+    doc.setFontSize(8);doc.setFont('helvetica','normal');
+    doc.text('Recibo de Pago de Salario',14,14);
+    doc.text(`${periodo.codigo||'—'} | ${periodo.fecha_inicio||'—'} al ${periodo.fecha_fin||'—'}`,200,14,'right');
+    doc.setTextColor(0,0,0);
+
+    // Datos empleado
+    doc.setFillColor(248,250,248);doc.rect(10,22,196,20,'F');
+    doc.setFontSize(8);doc.setFont('helvetica','bold');
+    doc.text('DATOS DEL COLABORADOR',14,28);
+    doc.setFont('helvetica','normal');
+    doc.text(`Código: ${emp2.codigo||'—'}`,14,34);
+    doc.text(`Nombre: ${emp2.nombre||'—'} ${emp2.apellido||''}`,60,34);
+    doc.text(`Días laborados: ${r.dias}`,160,34);
+    doc.text(`Puesto: ${emp2.cat_puestos?.nombre||'—'}`,14,40);
+    doc.text(`Departamento: ${emp2.cat_departamentos?.nombre||'—'}`,90,40);
+    doc.text(`Salario mensual: Q ${fmt(emp2.salario||r.salCalc)}`,160,40);
+
+    // Tabla ingresos
+    const ingRows=[
+      ['Salario ('+r.dias+' días)','',`Q ${fmt(r.salCalc)}`],
+      ['Bonificación Decreto 78-89','',`Q ${fmt(r.bonDec)}`],
+      ...Object.entries(r.ingDetalle||{}).map(([k,v])=>[k,'',`Q ${fmt(v)}`])
+    ];
+    doc.autoTable({head:[['INGRESOS','','Monto']],body:ingRows,
+      startY:46,margin:{left:10},tableWidth:90,
+      styles:{fontSize:7},headStyles:{fillColor:[29,111,66],textColor:255},
+      columnStyles:{2:{halign:'right'}}
+    });
+    const descRows=[
+      ['IGSS obrero (4.83%)','',`Q ${fmt(r.igssObrero)}`],
+      ['ISR retenido','',`Q ${fmt(r.isrPeriodo)}`],
+      ...Object.entries(r.descDetalle||{}).map(([k,v])=>[k,'',`Q ${fmt(v)}`])
+    ];
+    doc.autoTable({head:[['DESCUENTOS','','Monto']],body:descRows,
+      startY:46,margin:{left:116},tableWidth:90,
+      styles:{fontSize:7},headStyles:{fillColor:[185,28,28],textColor:255},
+      columnStyles:{2:{halign:'right'}}
+    });
+    const finY=Math.max(doc.previousAutoTable.finalY,doc.lastAutoTable?.finalY||0)+5;
+    doc.setFillColor(29,111,66);doc.rect(10,finY,196,12,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(10);doc.setFont('helvetica','bold');
+    doc.text('LÍQUIDO A RECIBIR',14,finY+8);
+    doc.text(`Q ${fmt(r.liquido_total)}`,200,finY+8,'right');
+    doc.setTextColor(0,0,0);doc.setFontSize(7);doc.setFont('helvetica','normal');
+    doc.text(`IGSS Patronal: Q ${fmt(r.igssPat)}   |   IRTRA: Q ${fmt(r.irtra||0)}   |   INTECAP: Q ${fmt(r.intecap||0)}`,14,finY+18);
+    const firmaY=finY+35;
+    doc.line(14,firmaY,100,firmaY);doc.line(116,firmaY,202,firmaY);
+    doc.setFontSize(7);
+    doc.text('Firma del colaborador',14,firmaY+4);
+    doc.text('Autorizado por',116,firmaY+4);
+  });
+  doc.save(`Recibos_${periodo.codigo||'planilla'}.pdf`);
+  toast('PDF de recibos generado','ok');
+}
+</script>
+</body>
+</html>

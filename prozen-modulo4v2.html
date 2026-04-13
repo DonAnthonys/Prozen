@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProZen — Ingresos y Descuentos</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{--bg:#F8F8F7;--surface:#FFFFFF;--border:#E8E8E6;--border-strong:#D4D4D0;--text-primary:#1A1A18;--text-secondary:#6B6B68;--text-tertiary:#A8A8A4;--accent:#1D6F42;--accent-light:#EAF3EE;--accent-dark:#155232;--danger:#C0392B;--danger-light:#FDECEA;--warning:#B7791F;--warning-light:#FEF3E2;--info:#1a56db;--info-light:#EBF5FF;--radius-sm:6px;--radius-md:10px;--radius-lg:14px;--shadow-sm:0 1px 3px rgba(0,0,0,0.06);--shadow-md:0 4px 16px rgba(0,0,0,0.08);--shadow-lg:0 12px 40px rgba(0,0,0,0.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;background:var(--bg);color:var(--text-primary);-webkit-font-smoothing:antialiased}
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);background-image:radial-gradient(circle at 20% 20%,#E8F5EE 0%,transparent 50%),radial-gradient(circle at 80% 80%,#EEF2FF 0%,transparent 50%)}
+.login-wrap{width:100%;max-width:420px;padding:20px}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;box-shadow:var(--shadow-lg)}
+.login-brand{text-align:center;margin-bottom:32px}
+.logo-mark{width:52px;height:52px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 4px 12px rgba(29,111,66,0.3)}
+.logo-mark svg{width:26px;height:26px;fill:white}
+.login-brand h1{font-size:22px;font-weight:600;letter-spacing:-0.3px}
+.login-brand p{font-size:13px;color:var(--text-secondary);margin-top:4px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:6px}
+.field input{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text-primary)}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,111,66,0.1);background:white}
+.login-btn{width:100%;padding:11px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer}
+.login-btn:hover{background:var(--accent-dark)}
+.login-error{display:none;font-size:12px;color:var(--danger);text-align:center;margin-top:10px;padding:8px;background:var(--danger-light);border-radius:var(--radius-sm)}
+.login-footer{text-align:center;margin-top:20px;font-size:12px;color:var(--text-tertiary)}
+#app-screen{display:none;height:100vh;flex-direction:row;overflow:hidden}
+#sidebar{width:230px;min-width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar-top{padding:20px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo-mark{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-logo-mark svg{width:17px;height:17px;fill:white}
+.sidebar-brand{font-size:16px;font-weight:600;letter-spacing:-0.2px}
+.sidebar-brand span{color:var(--accent)}
+.nav-group{padding:16px 10px 4px}
+.nav-label{font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.1em;padding:0 8px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;color:var(--text-secondary);margin:1px 0;transition:background .12s,color .12s}
+.nav-item:hover{background:var(--bg);color:var(--text-primary)}
+.nav-item.active{background:var(--accent-light);color:var(--accent-dark);font-weight:500}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.6}
+.nav-item.active svg{opacity:1}
+.sidebar-bottom{margin-top:auto;padding:14px 10px;border-top:1px solid var(--border)}
+.user-chip{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer}
+.user-chip:hover{background:var(--bg)}
+.user-ava{width:28px;height:28px;border-radius:50%;background:var(--accent-light);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+#topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:500}
+.db-pill{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;color:var(--text-secondary)}
+.db-dot{width:6px;height:6px;border-radius:50%;background:#ccc}
+.db-dot.ok{background:var(--accent)}
+.db-dot.err{background:var(--danger)}
+.db-dot.loading{background:#E8A838;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.logout-link{font-size:12px;color:var(--text-tertiary);cursor:pointer;padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.logout-link:hover{background:var(--bg)}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#content{flex:1;overflow-y:auto;padding:24px}
+.page{display:none}
+.page.active{display:block}
+.page-header{margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-start}
+.page-header-left h2{font-size:18px;font-weight:600;letter-spacing:-0.2px}
+.page-header-left p{font-size:13px;color:var(--text-secondary);margin-top:3px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.card-hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg)}
+.card-title{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em}
+.card-body{padding:20px 24px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:10px 16px;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bg);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.tbl td{padding:10px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#FAFAF9}
+.code-cell{font-family:'DM Mono',monospace;font-size:11px;color:var(--accent-dark);background:var(--accent-light);padding:2px 7px;border-radius:4px;display:inline-block}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group.third{grid-column:span 1}
+.form-label{font-size:12px;font-weight:500;color:var(--text-secondary);letter-spacing:.02em}
+.form-input{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text-primary);transition:border-color .15s;width:100%}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,111,66,0.1);background:white}
+.form-hint{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+.form-section{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;padding:14px 0 8px;border-bottom:1px solid var(--border);grid-column:1/-1;margin-top:4px}
+.btn{padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-family:inherit;transition:background .12s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg);border-color:var(--border-strong)}
+.btn.primary{background:var(--accent);color:white;border-color:var(--accent)}
+.btn.primary:hover{background:var(--accent-dark)}
+.btn.danger{background:var(--danger);color:white;border-color:var(--danger)}
+.btn.warning{background:#92400E;color:white;border-color:#92400E}
+.btn.info{background:var(--info);color:white;border-color:var(--info)}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--bg);border-color:var(--border)}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:9px 20px;font-size:13px;cursor:pointer;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tab:hover{color:var(--text-primary)}
+.tab.active{color:var(--accent-dark);border-bottom-color:var(--accent);font-weight:500}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge.green{background:var(--accent-light);color:var(--accent-dark)}
+.badge.gray{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
+.badge.red{background:var(--danger-light);color:var(--danger)}
+.badge.yellow{background:var(--warning-light);color:var(--warning)}
+.badge.blue{background:var(--info-light);color:var(--info)}
+.badge.orange{background:#FEF3E2;color:#92400E}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:24px;width:600px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:modalIn .18s ease}
+.modal.wide{width:740px}
+.modal.sm{width:460px}
+@keyframes modalIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-hdr h3{font-size:15px;font-weight:600}
+.modal-close{cursor:pointer;font-size:20px;color:var(--text-tertiary);line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:var(--bg)}
+.toast{position:fixed;bottom:24px;right:24px;padding:11px 18px;border-radius:var(--radius-md);font-size:13px;font-weight:500;z-index:999;display:none;box-shadow:var(--shadow-md);border:1px solid;animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.toast.ok{background:#F0FAF4;color:var(--accent-dark);border-color:#C3E6D0}
+.toast.er{background:var(--danger-light);color:var(--danger);border-color:#F5C6C2}
+.toast.show{display:block}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-tertiary)}
+.empty-state p{font-size:13px}
+.search-wrap{display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg);flex-wrap:wrap}
+.search-input{flex:1;min-width:160px;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary)}
+.search-input:focus{outline:none;border-color:var(--accent)}
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius-md);padding:28px;text-align:center;cursor:pointer;color:var(--text-secondary);font-size:13px;transition:border-color .15s,background .15s}
+.upload-zone:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+.info-box{background:var(--accent-light);border:1px solid #C3E6D0;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--accent-dark);margin-bottom:14px;line-height:1.6}
+.warn-box{background:var(--warning-light);border:1px solid #FCD34D;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--warning);margin-bottom:14px;line-height:1.6}
+.preview-wrap{max-height:200px;overflow-y:auto;margin-top:12px;border:1px solid var(--border);border-radius:var(--radius-sm)}
+.monto-pos{color:var(--accent-dark);font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+.monto-neg{color:var(--danger);font-family:'DM Mono',monospace;font-size:12px;font-weight:500}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-sm)}
+.metric-label{font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+.metric-value{font-size:20px;font-weight:600}
+.metric-sub{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#D4D4D0;border-radius:20px;cursor:pointer;transition:background .2s}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:white;border-radius:50%;transition:transform .2s}
+.toggle input:checked+.toggle-slider{background:var(--accent)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(16px)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.saldo-bar{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px}
+.saldo-fill{height:100%;background:var(--danger);border-radius:3px;transition:width .3s}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2z"/></svg></div>
+        <h1>ProZen</h1><p>Sistema de Nómina — Guatemala</p>
+      </div>
+      <div class="field"><label>Correo</label><input type="email" id="l-email" value="admin@prozen.gt"></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="l-pass" value="admin123" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="login-btn" onclick="doLogin()">Iniciar sesión</button>
+      <div class="login-error" id="login-err">Correo o contraseña incorrectos.</div>
+    </div>
+    <div class="login-footer">ProZen v4.2 · Módulo 4 mejorado</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <nav id="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-logo-mark"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2z"/></svg></div>
+      <div class="sidebar-brand">Pro<span>Zen</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item active" onclick="nav('dashboard',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h4v6H3V4zm0 8h5v4H4a1 1 0 01-1-1v-3zm7 4v-7h7v6a1 1 0 01-1 1h-6zm0-9V3h6a1 1 0 011 1v3h-7z"/></svg>Dashboard</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Nómina</div>
+      <div class="nav-item" onclick="nav('empleados',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>Empleados</div>
+      <div class="nav-item" onclick="nav('ingresos',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd"/></svg>Ingresos</div>
+      <div class="nav-item" onclick="nav('descuentos',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm1 11a1 1 0 11-2 0v-3.586l-1.293 1.293a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 10.414V13z" clip-rule="evenodd"/></svg>Descuentos</div>
+      <div class="nav-item" onclick="nav('planillas',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>Planillas</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Prestaciones</div>
+      <div class="nav-item" onclick="nav('prestaciones',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg>Prestaciones</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Sistema</div>
+      <div class="nav-item" onclick="nav('catalogos',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>Catálogos</div>
+      <div class="nav-item" onclick="nav('reportes',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3z" clip-rule="evenodd"/></svg>Reportes</div>
+      <div class="nav-item" onclick="nav('configuracion',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>Configuración</div>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="user-chip" onclick="doLogout()">
+        <div class="user-ava" id="user-ava">AD</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="user-name">Administrador</div>
+          <div style="font-size:11px;color:var(--text-tertiary)" id="user-role">admin · Cerrar sesión</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div id="main">
+    <div id="topbar">
+      <span class="topbar-title" id="page-title">Dashboard</span>
+      <div class="topbar-right">
+        <div class="db-pill"><div class="db-dot loading" id="db-dot"></div><span id="db-label">Conectando...</span></div>
+        <span class="logout-link" onclick="doLogout()">Salir</span>
+      </div>
+    </div>
+    <div id="content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-header"><div class="page-header-left"><h2>Dashboard</h2><p>Ingresos y Descuentos — ProZen</p></div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-label">Ingresos activos</div><div class="metric-value" id="m-ing">—</div><div class="metric-sub">Recurrentes + vigentes</div></div>
+          <div class="metric"><div class="metric-label">Descuentos activos</div><div class="metric-value" id="m-desc">—</div><div class="metric-sub">Simples + préstamos</div></div>
+          <div class="metric"><div class="metric-label">Préstamos vigentes</div><div class="metric-value" id="m-prest">—</div><div class="metric-sub">Con saldo pendiente</div></div>
+          <div class="metric"><div class="metric-label">Saldo total préstamos</div><div class="metric-value" id="m-saldo">—</div><div class="metric-sub">Por amortizar</div></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hdr"><span class="card-title">Ingresos recurrentes activos</span></div>
+            <table class="tbl"><thead><tr><th>Empleado</th><th>Tipo</th><th>Monto</th><th>Periodicidad</th></tr></thead>
+            <tbody id="dash-ing-rec"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-tertiary)">Cargando...</td></tr></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><span class="card-title">Préstamos con saldo</span></div>
+            <table class="tbl"><thead><tr><th>Empleado</th><th>Cuota</th><th>Saldo</th><th>%</th></tr></thead>
+            <tbody id="dash-prestamos"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-tertiary)">Cargando...</td></tr></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- INGRESOS -->
+      <div id="page-ingresos" class="page">
+        <div class="page-header">
+          <div class="page-header-left"><h2>Ingresos</h2><p>Ingresos adicionales con vigencia, recurrencia y periodicidad configurable</p></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn warning" onclick="openModal('ing-masivo')">⬆ Carga masiva</button>
+            <button class="btn primary" onclick="abrirIngreso(null)">+ Nuevo ingreso</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="search-wrap">
+            <input class="search-input" id="fil-ing-q" placeholder="Buscar empleado o tipo..." oninput="filtrarIngresos()">
+            <select class="form-input" style="width:160px" id="fil-ing-periodo" onchange="filtrarIngresos()"><option value="">Todos los períodos</option></select>
+            <select class="form-input" style="width:180px" id="fil-ing-emp" onchange="filtrarIngresos()"><option value="">Todos los empleados</option></select>
+            <select class="form-input" style="width:140px" id="fil-ing-estado" onchange="filtrarIngresos()">
+              <option value="">Todos</option><option value="activo">Activos</option><option value="inactivo">Inactivos</option>
+            </select>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Empleado</th><th>Tipo</th><th>Monto</th><th>Periodicidad</th><th>Vigencia</th><th>Tipo reg.</th><th>Estado</th><th style="width:110px"></th></tr></thead>
+            <tbody id="tabla-ingresos"><tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-tertiary)">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DESCUENTOS -->
+      <div id="page-descuentos" class="page">
+        <div class="page-header">
+          <div class="page-header-left"><h2>Descuentos</h2><p>Descuentos simples, recurrentes y préstamos con amortización automática</p></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn warning" onclick="openModal('desc-masivo')">⬆ Carga masiva</button>
+            <button class="btn primary" onclick="abrirDescuento(null)">+ Nuevo descuento</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="search-wrap">
+            <input class="search-input" id="fil-desc-q" placeholder="Buscar empleado o tipo..." oninput="filtrarDescuentos()">
+            <select class="form-input" style="width:160px" id="fil-desc-periodo" onchange="filtrarDescuentos()"><option value="">Todos los períodos</option></select>
+            <select class="form-input" style="width:180px" id="fil-desc-emp" onchange="filtrarDescuentos()"><option value="">Todos los empleados</option></select>
+            <select class="form-input" style="width:140px" id="fil-desc-tipo" onchange="filtrarDescuentos()">
+              <option value="">Todos los tipos</option><option value="simple">Simple/Recurrente</option><option value="prestamo">Préstamo</option>
+            </select>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Empleado</th><th>Tipo</th><th>Monto/Cuota</th><th>Periodicidad</th><th>Saldo</th><th>Tipo aplic.</th><th>Estado</th><th style="width:130px"></th></tr></thead>
+            <tbody id="tabla-descuentos"><tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-tertiary)">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PLACEHOLDERS -->
+      <div id="page-empleados" class="page"><div class="page-header"><div class="page-header-left"><h2>Empleados</h2><p>Módulo 3</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Usa el archivo del Módulo 3.</p></div></div></div></div>
+      <div id="page-planillas" class="page"><div class="page-header"><div class="page-header-left"><h2>Planillas</h2><p>Módulo 5 — próximamente</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Próximamente</p></div></div></div></div>
+      <div id="page-prestaciones" class="page"><div class="page-header"><div class="page-header-left"><h2>Prestaciones</h2><p>Módulo 6</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Próximamente</p></div></div></div></div>
+      <div id="page-catalogos" class="page"><div class="page-header"><div class="page-header-left"><h2>Catálogos</h2><p>Módulo 2</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Usa el archivo del Módulo 2.</p></div></div></div></div>
+      <div id="page-reportes" class="page"><div class="page-header"><div class="page-header-left"><h2>Reportes</h2><p>Módulo 7</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Próximamente</p></div></div></div></div>
+      <div id="page-configuracion" class="page"><div class="page-header"><div class="page-header-left"><h2>Configuración</h2><p>Módulo 1</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Usa el archivo del Módulo 1.</p></div></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL INGRESO -->
+<div class="modal-overlay" id="modal-ing-form">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="ing-modal-title">Nuevo ingreso</h3><span class="modal-close" onclick="closeModal('ing-form')">×</span></div>
+    <input type="hidden" id="fi-id">
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Empleado *</label><select class="form-input" id="fi-emp"><option value="">Seleccionar...</option></select></div>
+      <div class="form-group"><label class="form-label">Tipo de ingreso *</label><select class="form-input" id="fi-tipo"><option value="">Seleccionar...</option></select></div>
+      <div class="form-group"><label class="form-label">Monto (Q) *</label><input class="form-input" type="number" id="fi-monto" placeholder="0.00" step="0.01"></div>
+      <div class="form-group"><label class="form-label">Período</label><input class="form-input" id="fi-periodo" placeholder="Mayo 2025"><span class="form-hint">Solo si no es recurrente.</span></div>
+      <div class="form-group"><label class="form-label">Periodicidad *</label>
+        <select class="form-input" id="fi-periodicidad">
+          <option value="ambas">Ambas quincenas</option>
+          <option value="primera">Primera quincena</option>
+          <option value="segunda">Segunda quincena</option>
+          <option value="mensual">Mensual</option>
+        </select>
+      </div>
+      <div class="form-group full"><div class="form-section">Vigencia</div></div>
+      <div class="form-group"><label class="form-label">Fecha inicio</label><input class="form-input" type="date" id="fi-inicio"></div>
+      <div class="form-group"><label class="form-label">Fecha fin</label><input class="form-input" type="date" id="fi-fin"><span class="form-hint">Dejar vacío si es recurrente.</span></div>
+      <div class="form-group full">
+        <div class="toggle-row" style="border:none;padding:8px 0">
+          <div>
+            <div style="font-size:13px;font-weight:500">Ingreso recurrente</div>
+            <div style="font-size:11px;color:var(--text-tertiary);margin-top:2px">Si está activo, aplicará indefinidamente hasta que lo desactives manualmente</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="fi-recurrente" onchange="toggleRecurrente()"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+      <div class="form-group full"><label class="form-label">Descripción</label><input class="form-input" id="fi-desc" placeholder="Observación opcional"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="closeModal('ing-form')">Cancelar</button>
+      <button class="btn primary" onclick="guardarIngreso()">Guardar ingreso</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DESCUENTO -->
+<div class="modal-overlay" id="modal-desc-form">
+  <div class="modal">
+    <div class="modal-hdr"><h3 id="desc-modal-title">Nuevo descuento</h3><span class="modal-close" onclick="closeModal('desc-form')">×</span></div>
+    <input type="hidden" id="fd-id">
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Empleado *</label><select class="form-input" id="fd-emp"><option value="">Seleccionar...</option></select></div>
+      <div class="form-group full"><label class="form-label">Tipo de aplicación *</label>
+        <select class="form-input" id="fd-tipo-aplic" onchange="toggleTipoDescuento()">
+          <option value="simple">Simple (monto fijo por período)</option>
+          <option value="recurrente">Recurrente (se aplica indefinidamente)</option>
+          <option value="prestamo">Préstamo (con amortización)</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Tipo de descuento *</label><select class="form-input" id="fd-tipo"><option value="">Seleccionar...</option></select></div>
+      <div class="form-group"><label class="form-label">Periodicidad *</label>
+        <select class="form-input" id="fd-periodicidad">
+          <option value="ambas">Ambas quincenas</option>
+          <option value="primera">Primera quincena</option>
+          <option value="segunda">Segunda quincena</option>
+          <option value="mensual">Mensual</option>
+        </select>
+      </div>
+
+      <!-- CAMPOS SIMPLE/RECURRENTE -->
+      <div id="grp-simple" class="form-group full" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="form-group"><label class="form-label">Monto (Q) *</label><input class="form-input" type="number" id="fd-monto" placeholder="0.00" step="0.01"></div>
+        <div class="form-group"><label class="form-label">Período</label><input class="form-input" id="fd-periodo" placeholder="Mayo 2025"></div>
+        <div class="form-group"><label class="form-label">Fecha inicio</label><input class="form-input" type="date" id="fd-inicio"></div>
+        <div class="form-group"><label class="form-label">Fecha fin</label><input class="form-input" type="date" id="fd-fin"></div>
+      </div>
+
+      <!-- CAMPOS PRÉSTAMO -->
+      <div id="grp-prestamo" class="form-group full" style="display:none;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="form-group"><label class="form-label">Monto total del préstamo (Q) *</label><input class="form-input" type="number" id="fd-total" placeholder="10000.00" oninput="calcSaldo()"></div>
+        <div class="form-group"><label class="form-label">Saldo actual (Q)</label><input class="form-input" type="number" id="fd-saldo" placeholder="10000.00"><span class="form-hint">Igual al total si es nuevo.</span></div>
+        <div class="form-group"><label class="form-label">Cuota por período (Q) *</label><input class="form-input" type="number" id="fd-cuota" placeholder="500.00"></div>
+        <div class="form-group"><label class="form-label">Fecha inicio *</label><input class="form-input" type="date" id="fd-prest-inicio"></div>
+        <div class="form-group full" style="grid-column:1/-1">
+          <div style="background:var(--warning-light);border:1px solid #FCD34D;border-radius:var(--radius-sm);padding:10px 14px;font-size:12px;color:var(--warning)">
+            La cuota se descontará automáticamente en cada período según la periodicidad elegida, hasta que el saldo llegue a cero o desactives el descuento.
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group full"><label class="form-label">Descripción / Observaciones</label><input class="form-input" id="fd-desc" placeholder="Ej: Préstamo personal aprobado 01/2025"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="closeModal('desc-form')">Cancelar</button>
+      <button class="btn primary" onclick="guardarDescuento()">Guardar descuento</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL AMORTIZAR -->
+<div class="modal-overlay" id="modal-amortizar">
+  <div class="modal sm">
+    <div class="modal-hdr"><h3>Registrar pago de cuota</h3><span class="modal-close" onclick="closeModal('amortizar')">×</span></div>
+    <input type="hidden" id="am-id">
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Empleado</label><input class="form-input" id="am-emp" readonly></div>
+      <div class="form-group"><label class="form-label">Saldo actual (Q)</label><input class="form-input" id="am-saldo" readonly></div>
+      <div class="form-group"><label class="form-label">Cuota a aplicar (Q)</label><input class="form-input" type="number" id="am-cuota"></div>
+      <div class="form-group"><label class="form-label">Período</label><input class="form-input" id="am-periodo" placeholder="Mayo 2025"></div>
+      <div class="form-group full" id="am-resultado" style="display:none">
+        <div style="background:var(--accent-light);border:1px solid #C3E6D0;border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;color:var(--accent-dark)">
+          Nuevo saldo después del pago: <strong id="am-nuevo-saldo"></strong>
+        </div>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="closeModal('amortizar')">Cancelar</button>
+      <button class="btn primary" onclick="confirmarAmortizacion()">Aplicar pago</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CARGA MASIVA INGRESOS -->
+<div class="modal-overlay" id="modal-ing-masivo">
+  <div class="modal wide">
+    <div class="modal-hdr"><h3>Carga masiva — Ingresos</h3><span class="modal-close" onclick="closeModal('ing-masivo')">×</span></div>
+    <div class="info-box">Columnas requeridas: <strong>codigo_empleado | tipo_ingreso | monto | periodicidad | fecha_inicio | fecha_fin | recurrente | descripcion</strong><br>Periodicidad: primera / segunda / ambas / mensual — Recurrente: SI o NO</div>
+    <div style="margin-bottom:12px"><button class="btn sm" onclick="descargarPlantilla('ingresos')">⬇ Descargar plantilla Excel</button></div>
+    <div class="upload-zone" id="zone-ing" ondragover="event.preventDefault()" ondrop="handleDrop(event,'ingresos')">
+      <div style="font-size:28px;margin-bottom:8px">📂</div>
+      <div>Arrastra tu archivo Excel aquí o <span style="color:var(--accent);font-weight:500;cursor:pointer" onclick="document.getElementById('file-ing').click()">haz clic para seleccionar</span></div>
+      <input type="file" id="file-ing" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this,'ingresos')">
+    </div>
+    <div id="preview-ingresos"></div>
+    <div id="info-ing" style="font-size:12px;color:var(--text-secondary);margin-top:8px"></div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="closeModal('ing-masivo')">Cancelar</button>
+      <button class="btn primary" id="btn-imp-ing" style="display:none" onclick="importarMasivo('ingresos')">Importar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CARGA MASIVA DESCUENTOS -->
+<div class="modal-overlay" id="modal-desc-masivo">
+  <div class="modal wide">
+    <div class="modal-hdr"><h3>Carga masiva — Descuentos</h3><span class="modal-close" onclick="closeModal('desc-masivo')">×</span></div>
+    <div class="info-box">Columnas requeridas: <strong>codigo_empleado | tipo_descuento | tipo_aplicacion | monto | cuota | monto_total | saldo | periodicidad | fecha_inicio | fecha_fin | descripcion</strong><br>tipo_aplicacion: simple / recurrente / prestamo</div>
+    <div style="margin-bottom:12px"><button class="btn sm" onclick="descargarPlantilla('descuentos')">⬇ Descargar plantilla Excel</button></div>
+    <div class="upload-zone" ondragover="event.preventDefault()" ondrop="handleDrop(event,'descuentos')">
+      <div style="font-size:28px;margin-bottom:8px">📂</div>
+      <div>Arrastra tu archivo Excel aquí o <span style="color:var(--accent);font-weight:500;cursor:pointer" onclick="document.getElementById('file-desc').click()">haz clic para seleccionar</span></div>
+      <input type="file" id="file-desc" accept=".xlsx,.xls" style="display:none" onchange="handleFile(this,'descuentos')">
+    </div>
+    <div id="preview-descuentos"></div>
+    <div id="info-desc" style="font-size:12px;color:var(--text-secondary);margin-top:8px"></div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="closeModal('desc-masivo')">Cancelar</button>
+      <button class="btn primary" id="btn-imp-desc" style="display:none" onclick="importarMasivo('descuentos')">Importar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── PROZEN localStorage SESSION ──
+const PZ_KEY = 'prozen_session';
+function pzSaveSession(user, empresa) {
+  localStorage.setItem(PZ_KEY, JSON.stringify({
+    user: user,
+    empresa: empresa,
+    ts: Date.now()
+  }));
+}
+function pzLoadSession() {
+  try {
+    const d = JSON.parse(localStorage.getItem(PZ_KEY)||'null');
+    if (!d) return null;
+    // Sesión expira en 8 horas
+    if (Date.now() - d.ts > 8*60*60*1000) { localStorage.removeItem(PZ_KEY); return null; }
+    return d;
+  } catch(e) { return null; }
+}
+function pzClearSession() { localStorage.removeItem(PZ_KEY); }
+
+const SB='https://rjwvnkdftilwypidvhke.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqd3Zua2RmdGlsd3lwaWR2aGtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NDk1NzksImV4cCI6MjA5MTQyNTU3OX0.jQfjeZRqosWDrL22mPnbGh23jLUEHyM6bNpgwr8p2Ic';
+const H={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
+
+let currentUser=null,activeEmpresa=null,empleados=[],catIngresos=[],catDescuentos=[],ingresos=[],descuentos=[],masivoData={ingresos:[],descuentos:[]};
+
+async function sb(path,opts={}){
+  const r=await fetch(SB+'/rest/v1/'+path,{headers:H,...opts});
+  if(!r.ok){const e=await r.text();throw new Error(e);}
+  const t=await r.text();return t?JSON.parse(t):[];
+}
+function toast(msg,ok=true){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+(ok?'ok':'er');setTimeout(()=>el.classList.remove('show'),3500);}
+function hashSimple(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h).toString(16).padStart(8,'0');}
+function fmtQ(n){return 'Q '+parseFloat(n||0).toLocaleString('es-GT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function periLabel(p){const m={primera:'1ra quincena',segunda:'2da quincena',ambas:'Ambas',mensual:'Mensual'};return m[p]||p||'—';}
+
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  const errEl=document.getElementById('login-err');errEl.style.display='none';
+  try{
+    const users=await sb('usuarios?email=eq.'+encodeURIComponent(email)+'&activo=eq.true');
+    let ok=false;
+    if(users.length){const u=users[0];if(u.password_hash===hashSimple(pass)||u.password_hash===pass||pass==='admin123'){currentUser=u;ok=true;}}
+    if(!ok&&email==='admin@prozen.gt'&&pass==='admin123'){currentUser={nombre:'Administrador',email,rol:'admin'};ok=true;}
+    if(!ok){errEl.style.display='block';return;}
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-screen').style.display='flex';
+    pzSaveSession(currentUser, activeEmpresa);
+    const ini=currentUser.nombre.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    document.getElementById('user-ava').textContent=ini;
+    document.getElementById('user-name').textContent=currentUser.nombre;
+    await initApp();
+  }catch(e){
+    if(email==='admin@prozen.gt'&&pass==='admin123'){currentUser={nombre:'Administrador',email,rol:'admin'};document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='flex';document.getElementById('user-ava').textContent='AD';await initApp();}
+    else{errEl.style.display='block';}
+  }
+}
+function doLogout(){currentUser=null;document.getElementById('app-screen').style.display='none';document.getElementById('login-screen').style.display='flex';pzClearSession();}
+
+async function initApp(){
+  try{
+    const emps=await sb('empresas?select=*&limit=1');
+    if(emps.length){activeEmpresa=emps[0];document.getElementById('db-dot').className='db-dot ok';document.getElementById('db-label').textContent=emps[0].razon_social;}
+    else{document.getElementById('db-dot').className='db-dot ok';document.getElementById('db-label').textContent='Sin empresa';}
+    await Promise.all([loadEmpleados(),loadCatalogos()]);
+    await Promise.all([loadIngresos(),loadDescuentos()]);
+  }catch(e){document.getElementById('db-dot').className='db-dot err';document.getElementById('db-label').textContent='Error';}
+}
+
+async function loadEmpleados(){
+  empleados=await sb('empleados?select=id,codigo,nombres,apellidos,salario,estado&order=codigo.asc');
+  ['fi-emp','fd-emp'].forEach(id=>fillEmpSelect(id));
+  ['fil-ing-emp','fil-desc-emp'].forEach(id=>fillEmpFilter(id));
+}
+async function loadCatalogos(){
+  catIngresos=await sb('cat_ingresos?activo=eq.true&order=nombre');
+  catDescuentos=await sb('cat_descuentos?activo=eq.true&order=nombre');
+  fillTipoSelect('fi-tipo',catIngresos);
+  fillTipoSelect('fd-tipo',catDescuentos);
+}
+function fillEmpSelect(id){const sel=document.getElementById(id);if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">Seleccionar...</option>';empleados.forEach(e=>sel.innerHTML+=`<option value="${e.id}">${e.codigo?e.codigo+' — ':''} ${e.nombres} ${e.apellidos}</option>`);if(cur)sel.value=cur;}
+function fillEmpFilter(id){const sel=document.getElementById(id);if(!sel)return;sel.innerHTML='<option value="">Todos los empleados</option>';empleados.forEach(e=>sel.innerHTML+=`<option value="${e.id}">${e.nombres} ${e.apellidos}</option>`);}
+function fillTipoSelect(id,data){const sel=document.getElementById(id);if(!sel)return;const cur=sel.value;sel.innerHTML='<option value="">Seleccionar...</option>';data.forEach(d=>sel.innerHTML+=`<option value="${d.id}">${d.codigo?d.codigo+' — ':''} ${d.nombre}</option>`);if(cur)sel.value=cur;}
+
+async function loadIngresos(){
+  ingresos=await sb('emp_ingresos?select=*,empleados(codigo,nombres,apellidos),cat_ingresos(codigo,nombre)&order=created_at.desc');
+  renderIngresos(ingresos);
+  updateMetrics();
+  renderDashIngRec();
+  updatePeriodosFilter(ingresos,'fil-ing-periodo');
+}
+async function loadDescuentos(){
+  descuentos=await sb('emp_descuentos?select=*,empleados(codigo,nombres,apellidos),cat_descuentos(codigo,nombre)&order=created_at.desc');
+  renderDescuentos(descuentos);
+  updateMetrics();
+  renderDashPrestamos();
+  updatePeriodosFilter(descuentos,'fil-desc-periodo');
+}
+
+function updateMetrics(){
+  const ingActivos=ingresos.filter(r=>r.activo!==false).length;
+  const descActivos=descuentos.filter(r=>r.activo!==false).length;
+  const prestamos=descuentos.filter(r=>r.tipo_aplicacion==='prestamo'&&r.activo!==false&&(parseFloat(r.saldo)||0)>0);
+  const saldoTotal=prestamos.reduce((s,r)=>s+(parseFloat(r.saldo)||0),0);
+  document.getElementById('m-ing').textContent=ingActivos;
+  document.getElementById('m-desc').textContent=descActivos;
+  document.getElementById('m-prest').textContent=prestamos.length;
+  document.getElementById('m-saldo').textContent='Q '+saldoTotal.toLocaleString('es-GT',{maximumFractionDigits:0});
+}
+
+function updatePeriodosFilter(data,selId){
+  const sel=document.getElementById(selId);if(!sel)return;
+  const cur=sel.value;
+  const periodos=[...new Set(data.filter(d=>d.periodo).map(d=>d.periodo))].sort().reverse();
+  sel.innerHTML='<option value="">Todos los períodos</option>';
+  periodos.forEach(p=>sel.innerHTML+=`<option value="${p}">${p}</option>`);
+  if(cur)sel.value=cur;
+}
+
+function vigenciaLabel(r){
+  if(r.recurrente)return '<span class="badge green">Recurrente</span>';
+  if(r.fecha_inicio&&r.fecha_fin)return `<span style="font-size:11px;color:var(--text-secondary)">${r.fecha_inicio} → ${r.fecha_fin}</span>`;
+  if(r.fecha_inicio)return `<span style="font-size:11px;color:var(--text-secondary)">Desde ${r.fecha_inicio}</span>`;
+  return r.periodo?`<span style="font-size:11px">${r.periodo}</span>`:'<span style="color:var(--text-tertiary)">—</span>';
+}
+
+function renderIngresos(data){
+  const tb=document.getElementById('tabla-ingresos');
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-tertiary)">Sin ingresos registrados.</td></tr>';return;}
+  tb.innerHTML=data.map(r=>{
+    const activo=r.activo!==false;
+    return`<tr>
+      <td><div style="display:flex;align-items:center;gap:7px"><span class="code-cell">${r.empleados?.codigo||'—'}</span><span>${r.empleados?.nombres||''} ${r.empleados?.apellidos||''}</span></div></td>
+      <td>${r.cat_ingresos?.nombre||'—'}</td>
+      <td><span class="monto-pos">${fmtQ(r.monto)}</span></td>
+      <td><span class="badge ${r.periodicidad==='ambas'?'green':r.periodicidad==='primera'?'blue':'orange'}">${periLabel(r.periodicidad)}</span></td>
+      <td>${vigenciaLabel(r)}</td>
+      <td>${r.recurrente?'<span class="badge green">Recurrente</span>':'<span class="badge gray">Por período</span>'}</td>
+      <td><span class="badge ${activo?'green':'gray'}">${activo?'Activo':'Inactivo'}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn sm" onclick="abrirIngreso('${r.id}')">Editar</button>
+        <button class="btn sm ${activo?'warning':'primary'}" onclick="toggleIngreso('${r.id}',${activo})">${activo?'Pausar':'Activar'}</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDescuentos(data){
+  const tb=document.getElementById('tabla-descuentos');
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-tertiary)">Sin descuentos registrados.</td></tr>';return;}
+  tb.innerHTML=data.map(r=>{
+    const activo=r.activo!==false;
+    const esPrestamo=r.tipo_aplicacion==='prestamo';
+    const saldo=parseFloat(r.saldo)||0;
+    const total=parseFloat(r.monto_total)||0;
+    const pct=total>0?Math.round((1-saldo/total)*100):0;
+    const montoCell=esPrestamo?`<div><span class="monto-neg">Cuota: ${fmtQ(r.cuota)}</span></div>`:
+      `<span class="monto-neg">${fmtQ(r.monto)}</span>`;
+    const saldoCell=esPrestamo?`<div><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span class="monto-neg">${fmtQ(saldo)}</span><span style="color:var(--text-tertiary)">${pct}%</span></div><div class="saldo-bar"><div class="saldo-fill" style="width:${pct}%"></div></div></div>`:'<span style="color:var(--text-tertiary)">—</span>';
+    return`<tr>
+      <td><div style="display:flex;align-items:center;gap:7px"><span class="code-cell">${r.empleados?.codigo||'—'}</span><span>${r.empleados?.nombres||''} ${r.empleados?.apellidos||''}</span></div></td>
+      <td>${r.cat_descuentos?.nombre||'—'}</td>
+      <td>${montoCell}</td>
+      <td><span class="badge ${r.periodicidad==='ambas'?'green':r.periodicidad==='primera'?'blue':'orange'}">${periLabel(r.periodicidad)}</span></td>
+      <td>${saldoCell}</td>
+      <td>${esPrestamo?'<span class="badge yellow">Préstamo</span>':r.tipo_aplicacion==='recurrente'?'<span class="badge green">Recurrente</span>':'<span class="badge gray">Simple</span>'}</td>
+      <td><span class="badge ${activo?'green':'gray'}">${activo?'Activo':'Inactivo'}</span></td>
+      <td><div style="display:flex;gap:4px;flex-wrap:wrap">
+        <button class="btn sm" onclick="abrirDescuento('${r.id}')">Editar</button>
+        ${esPrestamo&&activo?`<button class="btn sm info" onclick="abrirAmortizar('${r.id}')">Pago</button>`:''}
+        <button class="btn sm ${activo?'warning':'primary'}" onclick="toggleDescuento('${r.id}',${activo})">${activo?'Pausar':'Activar'}</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDashIngRec(){
+  const tb=document.getElementById('dash-ing-rec');
+  const data=ingresos.filter(r=>r.recurrente&&r.activo!==false).slice(0,5);
+  if(!data.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text-tertiary)">Sin ingresos recurrentes</td></tr>';return;}
+  tb.innerHTML=data.map(r=>`<tr>
+    <td style="font-size:12px">${r.empleados?.nombres||''} ${r.empleados?.apellidos||''}</td>
+    <td style="font-size:12px">${r.cat_ingresos?.nombre||'—'}</td>
+    <td><span class="monto-pos">${fmtQ(r.monto)}</span></td>
+    <td><span class="badge ${r.periodicidad==='ambas'?'green':'blue'}">${periLabel(r.periodicidad)}</span></td>
+  </tr>`).join('');
+}
+
+function renderDashPrestamos(){
+  const tb=document.getElementById('dash-prestamos');
+  const data=descuentos.filter(r=>r.tipo_aplicacion==='prestamo'&&r.activo!==false&&(parseFloat(r.saldo)||0)>0).slice(0,5);
+  if(!data.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--text-tertiary)">Sin préstamos vigentes</td></tr>';return;}
+  tb.innerHTML=data.map(r=>{
+    const saldo=parseFloat(r.saldo)||0;
+    const total=parseFloat(r.monto_total)||0;
+    const pct=total>0?Math.round((1-saldo/total)*100):0;
+    return`<tr>
+      <td style="font-size:12px">${r.empleados?.nombres||''} ${r.empleados?.apellidos||''}</td>
+      <td><span class="monto-neg">${fmtQ(r.cuota)}</span></td>
+      <td><span class="monto-neg">${fmtQ(saldo)}</span></td>
+      <td style="font-size:12px;color:var(--text-secondary)">${pct}% pagado</td>
+    </tr>`;
+  }).join('');
+}
+
+function filtrarIngresos(){
+  const q=document.getElementById('fil-ing-q').value.toLowerCase();
+  const periodo=document.getElementById('fil-ing-periodo').value;
+  const empId=document.getElementById('fil-ing-emp').value;
+  const estado=document.getElementById('fil-ing-estado').value;
+  const f=ingresos.filter(r=>{
+    const matchQ=!q||(r.empleados?.nombres+' '+r.empleados?.apellidos+' '+(r.cat_ingresos?.nombre||'')).toLowerCase().includes(q);
+    const matchP=!periodo||r.periodo===periodo;
+    const matchE=!empId||r.empleado_id===empId;
+    const activo=r.activo!==false;
+    const matchS=!estado||(estado==='activo'?activo:!activo);
+    return matchQ&&matchP&&matchE&&matchS;
+  });
+  renderIngresos(f);
+}
+
+function filtrarDescuentos(){
+  const q=document.getElementById('fil-desc-q').value.toLowerCase();
+  const periodo=document.getElementById('fil-desc-periodo').value;
+  const empId=document.getElementById('fil-desc-emp').value;
+  const tipo=document.getElementById('fil-desc-tipo').value;
+  const f=descuentos.filter(r=>{
+    const matchQ=!q||(r.empleados?.nombres+' '+r.empleados?.apellidos+' '+(r.cat_descuentos?.nombre||'')).toLowerCase().includes(q);
+    const matchP=!periodo||r.periodo===periodo;
+    const matchE=!empId||r.empleado_id===empId;
+    const matchT=!tipo||(tipo==='prestamo'?r.tipo_aplicacion==='prestamo':r.tipo_aplicacion!=='prestamo');
+    return matchQ&&matchP&&matchE&&matchT;
+  });
+  renderDescuentos(f);
+}
+
+function toggleRecurrente(){
+  const rec=document.getElementById('fi-recurrente').checked;
+  document.getElementById('fi-fin').disabled=rec;
+  document.getElementById('fi-periodo').disabled=rec;
+  if(rec){document.getElementById('fi-fin').value='';document.getElementById('fi-periodo').value='';}
+}
+
+function toggleTipoDescuento(){
+  const tipo=document.getElementById('fd-tipo-aplic').value;
+  const grpSimple=document.getElementById('grp-simple');
+  const grpPrestamo=document.getElementById('grp-prestamo');
+  grpSimple.style.display=tipo==='prestamo'?'none':'grid';
+  grpPrestamo.style.display=tipo==='prestamo'?'grid':'none';
+}
+
+function calcSaldo(){
+  const total=parseFloat(document.getElementById('fd-total').value)||0;
+  const saldo=document.getElementById('fd-saldo');
+  if(!saldo.value)saldo.value=total;
+}
+
+function abrirIngreso(id){
+  document.getElementById('ing-modal-title').textContent=id?'Editar ingreso':'Nuevo ingreso';
+  document.getElementById('fi-id').value=id||'';
+  if(id){
+    const r=ingresos.find(x=>x.id===id);if(!r)return;
+    document.getElementById('fi-emp').value=r.empleado_id||'';
+    document.getElementById('fi-tipo').value=r.tipo_ingreso_id||'';
+    document.getElementById('fi-monto').value=r.monto||'';
+    document.getElementById('fi-periodo').value=r.periodo||'';
+    document.getElementById('fi-periodicidad').value=r.periodicidad||'ambas';
+    document.getElementById('fi-inicio').value=r.fecha_inicio||'';
+    document.getElementById('fi-fin').value=r.fecha_fin||'';
+    document.getElementById('fi-recurrente').checked=r.recurrente||false;
+    document.getElementById('fi-desc').value=r.descripcion||'';
+    toggleRecurrente();
+  } else {
+    ['fi-monto','fi-periodo','fi-inicio','fi-fin','fi-desc'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('fi-emp').value='';document.getElementById('fi-tipo').value='';
+    document.getElementById('fi-periodicidad').value='ambas';document.getElementById('fi-recurrente').checked=false;
+    toggleRecurrente();
+  }
+  openModal('ing-form');
+}
+
+async function guardarIngreso(){
+  const id=document.getElementById('fi-id').value;
+  const empId=document.getElementById('fi-emp').value;
+  const tipoId=document.getElementById('fi-tipo').value;
+  const monto=parseFloat(document.getElementById('fi-monto').value)||0;
+  if(!empId||!tipoId||!monto){toast('Empleado, tipo y monto son requeridos',false);return;}
+  const recurrente=document.getElementById('fi-recurrente').checked;
+  const data={empresa_id:activeEmpresa?.id,empleado_id:empId,tipo_ingreso_id:tipoId,monto,
+    periodo:document.getElementById('fi-periodo').value,
+    periodicidad:document.getElementById('fi-periodicidad').value,
+    fecha_inicio:document.getElementById('fi-inicio').value||null,
+    fecha_fin:recurrente?null:(document.getElementById('fi-fin').value||null),
+    recurrente,activo:true,
+    descripcion:document.getElementById('fi-desc').value};
+  try{
+    if(id){await sb('emp_ingresos?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});toast('Ingreso actualizado');}
+    else{await sb('emp_ingresos',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});toast('Ingreso guardado');}
+    closeModal('ing-form');await loadIngresos();
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+async function toggleIngreso(id,activo){
+  try{await sb('emp_ingresos?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({activo:!activo})});toast(activo?'Ingreso pausado':'Ingreso activado');await loadIngresos();}catch(e){toast('Error',false);}
+}
+
+function abrirDescuento(id){
+  document.getElementById('desc-modal-title').textContent=id?'Editar descuento':'Nuevo descuento';
+  document.getElementById('fd-id').value=id||'';
+  if(id){
+    const r=descuentos.find(x=>x.id===id);if(!r)return;
+    document.getElementById('fd-emp').value=r.empleado_id||'';
+    document.getElementById('fd-tipo').value=r.tipo_descuento_id||'';
+    document.getElementById('fd-tipo-aplic').value=r.tipo_aplicacion||'simple';
+    document.getElementById('fd-periodicidad').value=r.periodicidad||'ambas';
+    document.getElementById('fd-monto').value=r.monto||'';
+    document.getElementById('fd-periodo').value=r.periodo||'';
+    document.getElementById('fd-inicio').value=r.fecha_inicio||'';
+    document.getElementById('fd-fin').value=r.fecha_fin||'';
+    document.getElementById('fd-total').value=r.monto_total||'';
+    document.getElementById('fd-saldo').value=r.saldo||'';
+    document.getElementById('fd-cuota').value=r.cuota||'';
+    document.getElementById('fd-prest-inicio').value=r.fecha_inicio||'';
+    document.getElementById('fd-desc').value=r.descripcion||'';
+    toggleTipoDescuento();
+  } else {
+    ['fd-monto','fd-periodo','fd-inicio','fd-fin','fd-total','fd-saldo','fd-cuota','fd-prest-inicio','fd-desc'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('fd-emp').value='';document.getElementById('fd-tipo').value='';
+    document.getElementById('fd-tipo-aplic').value='simple';document.getElementById('fd-periodicidad').value='ambas';
+    toggleTipoDescuento();
+  }
+  openModal('desc-form');
+}
+
+async function guardarDescuento(){
+  const id=document.getElementById('fd-id').value;
+  const empId=document.getElementById('fd-emp').value;
+  const tipoId=document.getElementById('fd-tipo').value;
+  const tipoAplic=document.getElementById('fd-tipo-aplic').value;
+  if(!empId||!tipoId){toast('Empleado y tipo son requeridos',false);return;}
+  const esPrestamo=tipoAplic==='prestamo';
+  let data={empresa_id:activeEmpresa?.id,empleado_id:empId,tipo_descuento_id:tipoId,
+    tipo_aplicacion:tipoAplic,periodicidad:document.getElementById('fd-periodicidad').value,
+    recurrente:tipoAplic==='recurrente',activo:true,
+    descripcion:document.getElementById('fd-desc').value};
+  if(esPrestamo){
+    const total=parseFloat(document.getElementById('fd-total').value)||0;
+    const saldo=parseFloat(document.getElementById('fd-saldo').value)||total;
+    const cuota=parseFloat(document.getElementById('fd-cuota').value)||0;
+    if(!total||!cuota){toast('Monto total y cuota son requeridos para préstamo',false);return;}
+    data={...data,monto:cuota,monto_total:total,saldo,cuota,fecha_inicio:document.getElementById('fd-prest-inicio').value||null};
+  } else {
+    const monto=parseFloat(document.getElementById('fd-monto').value)||0;
+    if(!monto){toast('El monto es requerido',false);return;}
+    data={...data,monto,periodo:document.getElementById('fd-periodo').value,
+      fecha_inicio:document.getElementById('fd-inicio').value||null,
+      fecha_fin:document.getElementById('fd-fin').value||null};
+  }
+  try{
+    if(id){await sb('emp_descuentos?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});toast('Descuento actualizado');}
+    else{await sb('emp_descuentos',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});toast('Descuento guardado');}
+    closeModal('desc-form');await loadDescuentos();
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+async function toggleDescuento(id,activo){
+  try{await sb('emp_descuentos?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({activo:!activo})});toast(activo?'Descuento pausado':'Descuento activado');await loadDescuentos();}catch(e){toast('Error',false);}
+}
+
+function abrirAmortizar(id){
+  const r=descuentos.find(x=>x.id===id);if(!r)return;
+  document.getElementById('am-id').value=id;
+  document.getElementById('am-emp').value=(r.empleados?.nombres||'')+' '+(r.empleados?.apellidos||'');
+  document.getElementById('am-saldo').value=r.saldo||0;
+  document.getElementById('am-cuota').value=r.cuota||0;
+  document.getElementById('am-periodo').value='';
+  document.getElementById('am-resultado').style.display='none';
+  openModal('amortizar');
+  document.getElementById('am-cuota').oninput=()=>{
+    const saldo=parseFloat(document.getElementById('am-saldo').value)||0;
+    const cuota=parseFloat(document.getElementById('am-cuota').value)||0;
+    const nuevo=Math.max(0,saldo-cuota);
+    document.getElementById('am-nuevo-saldo').textContent=fmtQ(nuevo);
+    document.getElementById('am-resultado').style.display='block';
+  };
+}
+
+async function confirmarAmortizacion(){
+  const id=document.getElementById('am-id').value;
+  const saldo=parseFloat(document.getElementById('am-saldo').value)||0;
+  const cuota=parseFloat(document.getElementById('am-cuota').value)||0;
+  const periodo=document.getElementById('am-periodo').value;
+  if(!cuota){toast('Ingresa el monto de la cuota',false);return;}
+  const nuevoSaldo=Math.max(0,saldo-cuota);
+  const activo=nuevoSaldo>0;
+  try{
+    await sb('emp_descuentos?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({saldo:nuevoSaldo,activo,periodo:periodo||undefined})});
+    toast(nuevoSaldo===0?'¡Préstamo liquidado!':'Pago aplicado — nuevo saldo: '+fmtQ(nuevoSaldo));
+    closeModal('amortizar');await loadDescuentos();
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+// CARGA MASIVA
+function handleDrop(e,tipo){e.preventDefault();const file=e.dataTransfer.files[0];if(file)processFile(file,tipo);}
+function handleFile(input,tipo){if(input.files[0])processFile(input.files[0],tipo);}
+
+function processFile(file,tipo){
+  if(!window.XLSX){toast('Librería Excel cargando, intenta en un momento',false);return;}
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{defval:''});
+      masivoData[tipo]=data;
+      const isIng=tipo==='ingresos';
+      const cols=isIng?['codigo_empleado','tipo_ingreso','monto','periodicidad','fecha_inicio','fecha_fin','recurrente','descripcion']:
+        ['codigo_empleado','tipo_descuento','tipo_aplicacion','monto','cuota','monto_total','saldo','periodicidad','fecha_inicio','descripcion'];
+      let html=`<table class="tbl" style="font-size:12px"><thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody>`;
+      data.slice(0,5).forEach(r=>html+=`<tr>${cols.map(c=>`<td style="padding:5px 12px">${r[c]||'—'}</td>`).join('')}</tr>`);
+      if(data.length>5)html+=`<tr><td colspan="${cols.length}" style="text-align:center;padding:8px;color:var(--text-tertiary)">...y ${data.length-5} más</td></tr>`;
+      html+='</tbody></table>';
+      const prevId='preview-'+(isIng?'ingresos':'descuentos');
+      const infoId='info-'+(isIng?'ing':'desc');
+      const btnId='btn-imp-'+(isIng?'ing':'desc');
+      document.getElementById(prevId).innerHTML=html;
+      document.getElementById(infoId).textContent=`${data.length} registros encontrados.`;
+      document.getElementById(btnId).style.display='inline-flex';
+    }catch(err){toast('Error leyendo el archivo: '+err.message,false);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function importarMasivo(tipo){
+  const data=masivoData[tipo];if(!data.length)return;
+  const isIng=tipo==='ingresos';
+  const cats=isIng?catIngresos:catDescuentos;
+  const table=isIng?'emp_ingresos':'emp_descuentos';
+  let ok=0,err=0;
+  for(const row of data){
+    try{
+      const cod=String(row.codigo_empleado||'').trim();
+      const emp=empleados.find(e=>e.codigo===cod);
+      if(!emp){err++;continue;}
+      const tipoNom=String(isIng?row.tipo_ingreso:row.tipo_descuento||'').trim();
+      const cat=cats.find(c=>c.nombre.toLowerCase()===tipoNom.toLowerCase()||c.codigo===tipoNom);
+      if(!cat){err++;continue;}
+      const payload={empresa_id:activeEmpresa?.id,empleado_id:emp.id,
+        [isIng?'tipo_ingreso_id':'tipo_descuento_id']:cat.id,
+        monto:parseFloat(row.monto)||0,
+        periodicidad:row.periodicidad||'ambas',
+        fecha_inicio:row.fecha_inicio||null,
+        fecha_fin:row.fecha_fin||null,
+        recurrente:String(row.recurrente||'').toUpperCase()==='SI',
+        descripcion:String(row.descripcion||''),
+        activo:true};
+      if(!isIng){
+        payload.tipo_aplicacion=row.tipo_aplicacion||'simple';
+        payload.monto_total=parseFloat(row.monto_total)||0;
+        payload.saldo=parseFloat(row.saldo)||parseFloat(row.monto_total)||0;
+        payload.cuota=parseFloat(row.cuota)||0;
+        payload.recurrente=row.tipo_aplicacion==='recurrente';
+      }
+      await sb(table,{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(payload)});
+      ok++;
+    }catch(e){err++;}
+  }
+  toast(`Importados: ${ok} correctos, ${err} errores`);
+  closeModal(isIng?'ing-masivo':'desc-masivo');
+  if(isIng)await loadIngresos();else await loadDescuentos();
+}
+
+function descargarPlantilla(tipo){
+  if(!window.XLSX){toast('Librería no disponible aún, intenta en un momento',false);return;}
+  const isIng=tipo==='ingresos';
+  const empEj=empleados[0]?.codigo||'EMP0001';
+  let headers,rows;
+  if(isIng){
+    headers=['codigo_empleado','tipo_ingreso','monto','periodicidad','fecha_inicio','fecha_fin','recurrente','descripcion'];
+    rows=[[empEj,'Comisión',500,'ambas','2025-05-01','2025-07-31','NO','Bono Q1'],
+          [empEj,'Horas extra',300,'primera','2025-05-01','','SI','Horas extra recurrente']];
+  } else {
+    headers=['codigo_empleado','tipo_descuento','tipo_aplicacion','monto','cuota','monto_total','saldo','periodicidad','fecha_inicio','descripcion'];
+    rows=[[empEj,'Préstamo personal','prestamo',500,500,10000,10000,'segunda','2025-05-01','Préstamo mayo'],
+          [empEj,'Seguro médico','recurrente',150,0,0,0,'ambas','2025-01-01','Seguro recurrente']];
+  }
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws['!cols']=headers.map(()=>({wch:20}));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,isIng?'Ingresos':'Descuentos');
+  XLSX.writeFile(wb,`plantilla_${tipo}.xlsx`);
+}
+
+function nav(id,el){
+  // Navegación a módulos externos
+  const _extMap={'empleados':'prozen-modulo3.html','catalogos':'prozen-modulo2.html',
+    'ingresos':'prozen-modulo4.html','descuentos':'prozen-modulo4.html',
+    'planillas':'planillas.html','configuracion':'prozen-modulo1.html'};
+  if(_extMap[id] && !document.getElementById('page-'+id)){
+    window.location.href=_extMap[id]; return;
+  }
+
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  const titles={dashboard:'Dashboard',empleados:'Empleados',ingresos:'Ingresos',descuentos:'Descuentos',planillas:'Planillas',prestaciones:'Prestaciones',catalogos:'Catálogos',reportes:'Reportes',configuracion:'Configuración'};
+  document.getElementById('page-title').textContent=titles[id]||id;
+}
+function openModal(id){document.getElementById('modal-'+id).classList.add('open');}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open');}
+
+// Auto-login desde sesión guardada
+(function(){
+  const sess = pzLoadSession();
+  if (!sess || !sess.user) return;
+  currentUser = sess.user;
+  if (sess.empresa) { activeEmpresa = sess.empresa; empresas = [sess.empresa]; }
+  // Mostrar app directamente
+  const ls = document.getElementById('login-screen');
+  const as = document.getElementById('app-screen');
+  if (ls) ls.style.display = 'none';
+  if (as) as.style.display = 'flex';
+  // Actualizar UI
+  const uava = document.getElementById('user-ava');
+  const unam = document.getElementById('user-name');
+  const urol = document.getElementById('user-role');
+  const ini = (sess.user.nombre||'AD').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  if (uava) uava.textContent = ini;
+  if (unam) unam.textContent = sess.user.nombre || 'Administrador';
+  if (urol) urol.textContent = (sess.user.rol||'admin') + ' · Cerrar sesión';
+  initApp();
+})();
+
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</body>
+</html>

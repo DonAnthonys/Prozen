@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProZen — Sistema de Nómina</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+:root{--bg:#F8F8F7;--surface:#FFFFFF;--border:#E8E8E6;--border-strong:#D4D4D0;--text-primary:#1A1A18;--text-secondary:#6B6B68;--text-tertiary:#A8A8A4;--accent:#1D6F42;--accent-light:#EAF3EE;--accent-dark:#155232;--danger:#C0392B;--danger-light:#FDECEA;--warning:#B7791F;--warning-light:#FEF3E2;--radius-sm:6px;--radius-md:10px;--radius-lg:14px;--shadow-sm:0 1px 3px rgba(0,0,0,0.06);--shadow-md:0 4px 16px rgba(0,0,0,0.08);--shadow-lg:0 12px 40px rgba(0,0,0,0.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',system-ui,sans-serif;font-size:14px;background:var(--bg);color:var(--text-primary);-webkit-font-smoothing:antialiased}
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);background-image:radial-gradient(circle at 20% 20%,#E8F5EE 0%,transparent 50%),radial-gradient(circle at 80% 80%,#EEF2FF 0%,transparent 50%)}
+.login-wrap{width:100%;max-width:420px;padding:20px}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:40px;box-shadow:var(--shadow-lg)}
+.login-brand{text-align:center;margin-bottom:32px}
+.logo-mark{width:52px;height:52px;background:var(--accent);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:0 4px 12px rgba(29,111,66,0.3)}
+.logo-mark svg{width:26px;height:26px;fill:white}
+.login-brand h1{font-size:22px;font-weight:600;letter-spacing:-0.3px}
+.login-brand p{font-size:13px;color:var(--text-secondary);margin-top:4px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:6px}
+.field input{width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;background:var(--bg);color:var(--text-primary);transition:border-color .15s}
+.field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,111,66,0.1);background:white}
+.login-btn{width:100%;padding:11px;background:var(--accent);color:white;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:500;font-family:inherit;cursor:pointer}
+.login-btn:hover{background:var(--accent-dark)}
+.login-error{display:none;font-size:12px;color:var(--danger);text-align:center;margin-top:10px;padding:8px;background:var(--danger-light);border-radius:var(--radius-sm)}
+.login-footer{text-align:center;margin-top:20px;font-size:12px;color:var(--text-tertiary)}
+#app-screen{display:none;height:100vh;flex-direction:row;overflow:hidden}
+#sidebar{width:230px;min-width:230px;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.sidebar-top{padding:20px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo-mark{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-logo-mark svg{width:17px;height:17px;fill:white}
+.sidebar-brand{font-size:16px;font-weight:600;letter-spacing:-0.2px}
+.sidebar-brand span{color:var(--accent)}
+.nav-group{padding:16px 10px 4px}
+.nav-label{font-size:10px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.1em;padding:0 8px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;color:var(--text-secondary);margin:1px 0;transition:background .12s,color .12s}
+.nav-item:hover{background:var(--bg);color:var(--text-primary)}
+.nav-item.active{background:var(--accent-light);color:var(--accent-dark);font-weight:500}
+.nav-item svg{width:15px;height:15px;flex-shrink:0;opacity:.6}
+.nav-item.active svg{opacity:1}
+.sidebar-bottom{margin-top:auto;padding:14px 10px;border-top:1px solid var(--border)}
+.user-chip{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:var(--radius-sm);cursor:pointer}
+.user-chip:hover{background:var(--bg)}
+.user-ava{width:28px;height:28px;border-radius:50%;background:var(--accent-light);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.user-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:11px;color:var(--text-tertiary)}
+#topbar{height:54px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;justify-content:space-between;flex-shrink:0}
+.topbar-title{font-size:15px;font-weight:500}
+.db-pill{display:flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;color:var(--text-secondary)}
+.db-dot{width:6px;height:6px;border-radius:50%;background:#ccc}
+.db-dot.ok{background:var(--accent)}
+.db-dot.err{background:var(--danger)}
+.db-dot.loading{background:#E8A838;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-right{display:flex;align-items:center;gap:10px}
+.logout-link{font-size:12px;color:var(--text-tertiary);cursor:pointer;padding:5px 10px;border-radius:var(--radius-sm);border:1px solid var(--border)}
+.logout-link:hover{background:var(--bg)}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#content{flex:1;overflow-y:auto;padding:24px}
+.page{display:none}
+.page.active{display:block}
+.page-header{margin-bottom:22px;display:flex;justify-content:space-between;align-items:flex-start}
+.page-header-left h2{font-size:18px;font-weight:600;letter-spacing:-0.2px}
+.page-header-left p{font-size:13px;color:var(--text-secondary);margin-top:3px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow-sm)}
+.card-hdr{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);background:var(--bg)}
+.card-title{font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.06em}
+.card-body{padding:20px 24px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{text-align:left;padding:10px 16px;font-size:11px;font-weight:600;color:var(--text-secondary);background:var(--bg);border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.tbl td{padding:11px 16px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#FAFAF9}
+.code-cell{font-family:'DM Mono',monospace;font-size:12px;color:var(--accent-dark);background:var(--accent-light);padding:3px 8px;border-radius:4px;display:inline-block}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+.form-group.third{grid-column:span 1}
+.form-label{font-size:12px;font-weight:500;color:var(--text-secondary);letter-spacing:.02em}
+.form-input{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--bg);color:var(--text-primary);transition:border-color .15s;width:100%}
+.form-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,111,66,0.1);background:white}
+.form-hint{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+.form-section{font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.08em;padding:14px 0 8px;border-bottom:1px solid var(--border);grid-column:1/-1;margin-top:4px}
+.btn{padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-primary);font-family:inherit;transition:background .12s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg);border-color:var(--border-strong)}
+.btn.primary{background:var(--accent);color:white;border-color:var(--accent)}
+.btn.primary:hover{background:var(--accent-dark)}
+.btn.danger{background:var(--danger);color:white;border-color:var(--danger)}
+.btn.warning{background:#92400E;color:white;border-color:#92400E}
+.btn.sm{padding:5px 10px;font-size:12px}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--bg);border-color:var(--border)}
+.btn-row{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:20px}
+.tab{padding:9px 20px;font-size:13px;cursor:pointer;color:var(--text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .12s;white-space:nowrap}
+.tab:hover{color:var(--text-primary)}
+.tab.active{color:var(--accent-dark);border-bottom-color:var(--accent);font-weight:500}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.badge.green{background:var(--accent-light);color:var(--accent-dark)}
+.badge.gray{background:var(--bg);color:var(--text-secondary);border:1px solid var(--border)}
+.badge.red{background:var(--danger-light);color:var(--danger)}
+.badge.yellow{background:var(--warning-light);color:var(--warning)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius-lg);border:1px solid var(--border);padding:24px;width:700px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:modalIn .18s ease}
+.modal.sm{width:480px}
+@keyframes modalIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.modal-hdr h3{font-size:15px;font-weight:600}
+.modal-close{cursor:pointer;font-size:20px;color:var(--text-tertiary);line-height:1;padding:2px 6px;border-radius:4px}
+.modal-close:hover{background:var(--bg)}
+.toast{position:fixed;bottom:24px;right:24px;padding:11px 18px;border-radius:var(--radius-md);font-size:13px;font-weight:500;z-index:999;display:none;box-shadow:var(--shadow-md);border:1px solid;animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.toast.ok{background:#F0FAF4;color:var(--accent-dark);border-color:#C3E6D0}
+.toast.er{background:var(--danger-light);color:var(--danger);border-color:#F5C6C2}
+.toast.show{display:block}
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-tertiary)}
+.empty-state p{font-size:13px}
+.search-wrap{display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--bg)}
+.search-input{flex:1;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;background:var(--surface);color:var(--text-primary)}
+.search-input:focus{outline:none;border-color:var(--accent)}
+.emp-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent-light);color:var(--accent-dark);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0}
+.emp-name{font-weight:500;font-size:13px}
+.emp-sub{font-size:11px;color:var(--text-secondary);margin-top:1px}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;box-shadow:var(--shadow-sm)}
+.metric-label{font-size:12px;color:var(--text-secondary);margin-bottom:4px}
+.metric-value{font-size:22px;font-weight:600}
+.metric-sub{font-size:11px;color:var(--text-tertiary);margin-top:2px}
+.baja-badge{background:#FEF3E2;color:#92400E;border:1px solid #FCD34D}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;inset:0;background:#D4D4D0;border-radius:20px;cursor:pointer;transition:background .2s}
+.toggle-slider:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:white;border-radius:50%;transition:transform .2s}
+.toggle input:checked+.toggle-slider{background:var(--accent)}
+.toggle input:checked+.toggle-slider:before{transform:translateX(16px)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="logo-mark"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2z"/></svg></div>
+        <h1>ProZen</h1>
+        <p>Sistema de Nómina — Guatemala</p>
+      </div>
+      <div class="field"><label>Correo electrónico</label><input type="email" id="l-email" value="admin@prozen.gt"></div>
+      <div class="field"><label>Contraseña</label><input type="password" id="l-pass" value="admin123" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <button class="login-btn" onclick="doLogin()">Iniciar sesión</button>
+      <div class="login-error" id="login-err">Correo o contraseña incorrectos.</div>
+    </div>
+    <div class="login-footer">ProZen v3.0 · Módulos 1, 2 y 3 activos</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <nav id="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-logo-mark"><svg viewBox="0 0 24 24"><path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h12v2H3v-2z"/></svg></div>
+      <div class="sidebar-brand">Pro<span>Zen</span></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Principal</div>
+      <div class="nav-item active" onclick="nav('dashboard',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 011-1h4v6H3V4zm0 8h5v4H4a1 1 0 01-1-1v-3zm7 4v-7h7v6a1 1 0 01-1 1h-6zm0-9V3h6a1 1 0 011 1v3h-7z"/></svg>Dashboard</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Nómina</div>
+      <div class="nav-item" onclick="nav('empleados',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>Empleados</div>
+      <div class="nav-item" onclick="nav('ingresos',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd"/></svg>Ingresos</div>
+      <div class="nav-item" onclick="nav('descuentos',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zm1 11a1 1 0 11-2 0v-3.586l-1.293 1.293a1 1 0 01-1.414-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 10.414V13z" clip-rule="evenodd"/></svg>Descuentos</div>
+      <div class="nav-item" onclick="nav('planillas',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/></svg>Planillas</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Prestaciones</div>
+      <div class="nav-item" onclick="nav('prestaciones',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg>Prestaciones</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Sistema</div>
+      <div class="nav-item" onclick="nav('catalogos',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>Catálogos</div>
+      <div class="nav-item" onclick="nav('reportes',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3z" clip-rule="evenodd"/></svg>Reportes</div>
+      <div class="nav-item" onclick="nav('configuracion',this)"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>Configuración</div>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="user-chip" onclick="doLogout()">
+        <div class="user-ava" id="user-ava">AD</div>
+        <div style="flex:1;min-width:0">
+          <div class="user-name" id="user-name">Administrador</div>
+          <div class="user-role" id="user-role">admin · Cerrar sesión</div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div id="main">
+    <div id="topbar">
+      <span class="topbar-title" id="page-title">Dashboard</span>
+      <div class="topbar-right">
+        <div class="db-pill"><div class="db-dot loading" id="db-dot"></div><span id="db-label">Conectando...</span></div>
+        <span class="logout-link" onclick="doLogout()">Salir</span>
+      </div>
+    </div>
+    <div id="content">
+
+      <!-- DASHBOARD -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-header"><div class="page-header-left"><h2>Dashboard</h2><p>Bienvenido a ProZen</p></div></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-label">Empleados activos</div><div class="metric-value" id="m-activos">—</div><div class="metric-sub">En nómina</div></div>
+          <div class="metric"><div class="metric-label">Empleados inactivos</div><div class="metric-value" id="m-inactivos">—</div><div class="metric-sub">Con baja registrada</div></div>
+          <div class="metric"><div class="metric-label">Masa salarial</div><div class="metric-value" id="m-masa">—</div><div class="metric-sub">Salarios base activos</div></div>
+          <div class="metric"><div class="metric-label">IGSS patronal est.</div><div class="metric-value" id="m-igss">—</div><div class="metric-sub">12.67% sobre salarios</div></div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-hdr"><span class="card-title">Últimos empleados registrados</span></div>
+            <table class="tbl"><thead><tr><th>Código</th><th>Nombre</th><th>Puesto</th><th>Estado</th></tr></thead>
+            <tbody id="dash-emp-recientes"><tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-tertiary)">Cargando...</td></tr></tbody></table>
+          </div>
+          <div class="card">
+            <div class="card-hdr"><span class="card-title">Estado de módulos</span></div>
+            <div class="card-body" style="padding:0 20px">
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px">Módulo 1 — Login + Config</span><span class="badge green">Activo</span></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px">Módulo 2 — Catálogos</span><span class="badge green">Activo</span></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px">Módulo 3 — Empleados</span><span class="badge green">Activo</span></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px">Módulo 4 — Ingresos y Descuentos</span><span class="badge gray">Próximo</span></div>
+              <div style="display:flex;justify-content:space-between;padding:10px 0"><span style="font-size:13px">Módulo 5 — Planillas</span><span class="badge gray">Próximo</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- EMPLEADOS -->
+      <div id="page-empleados" class="page">
+        <div class="page-header">
+          <div class="page-header-left"><h2>Empleados</h2><p>Gestión completa del expediente de cada colaborador</p></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" onclick="nav('configuracion',null);cfgTab('campos',null)">Campos extra</button>
+            <button class="btn primary" onclick="abrirNuevoEmpleado()">+ Nuevo empleado</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="search-wrap">
+            <input class="search-input" placeholder="Buscar por nombre, código, DPI o puesto..." id="emp-search" oninput="filterEmpleados(this.value)">
+            <select class="form-input" style="width:160px" id="fil-estado" onchange="filterEmpleados(document.getElementById('emp-search').value)">
+              <option value="">Todos</option>
+              <option value="Activo">Activos</option>
+              <option value="Inactivo">Inactivos / Baja</option>
+            </select>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>Código</th><th>Nombre</th><th>Puesto</th><th>Departamento</th><th>Salario base</th><th>Ingreso</th><th>Estado</th><th style="width:130px"></th></tr></thead>
+            <tbody id="tabla-empleados"><tr><td colspan="8" style="text-align:center;padding:28px;color:var(--text-tertiary)">Cargando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PLACEHOLDERS -->
+      <div id="page-ingresos" class="page"><div class="page-header"><div class="page-header-left"><h2>Ingresos</h2><p>Disponible en el Módulo 4</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Próximamente</p></div></div></div></div>
+      <div id="page-descuentos" class="page"><div class="page-header"><div class="page-header-left"><h2>Descuentos</h2><p>Disponible en el Módulo 4</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Próximamente</p></div></div></div></div>
+      <div id="page-planillas" class="page"><div class="page-header"><div class="page-header-left"><h2>Planillas</h2><p>Disponible en el Módulo 5</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Próximamente</p></div></div></div></div>
+      <div id="page-prestaciones" class="page"><div class="page-header"><div class="page-header-left"><h2>Prestaciones</h2><p>Disponible en el Módulo 6</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Próximamente</p></div></div></div></div>
+      <div id="page-catalogos" class="page"><div class="page-header"><div class="page-header-left"><h2>Catálogos</h2><p>Módulo 2</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Ve al módulo 2 para gestionar catálogos.</p></div></div></div></div>
+      <div id="page-reportes" class="page"><div class="page-header"><div class="page-header-left"><h2>Reportes</h2><p>Disponible en el Módulo 7</p></div></div><div class="card"><div class="card-body"><div class="empty-state"><p>Próximamente</p></div></div></div></div>
+
+      <!-- CONFIGURACIÓN -->
+      <div id="page-configuracion" class="page">
+        <div class="page-header"><div class="page-header-left"><h2>Configuración</h2><p>Empresas, usuarios y campos del sistema</p></div></div>
+        <div class="tabs">
+          <div class="tab active" onclick="cfgTab('empresas',this)">Empresas</div>
+          <div class="tab" onclick="cfgTab('usuarios',this)">Usuarios</div>
+          <div class="tab" onclick="cfgTab('campos',this)">Campos extra empleado</div>
+        </div>
+        <div id="cfg-empresas">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><p style="font-size:13px;color:var(--text-secondary)">Gestiona las empresas.</p><button class="btn primary" onclick="openModal('empresa-form');resetEmpForm()">+ Nueva empresa</button></div>
+          <div class="card" id="lista-empresas"><div class="card-body"><div class="empty-state"><p>Cargando...</p></div></div></div>
+        </div>
+        <div id="cfg-usuarios" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><p style="font-size:13px;color:var(--text-secondary)">Usuarios con acceso.</p><button class="btn primary" onclick="openModal('usuario-form')">+ Nuevo usuario</button></div>
+          <div class="card"><table class="tbl"><thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th></th></tr></thead><tbody id="tabla-usuarios"><tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-tertiary)">Cargando...</td></tr></tbody></table></div>
+        </div>
+        <div id="cfg-campos" style="display:none">
+          <div style="margin-bottom:14px"><p style="font-size:13px;color:var(--text-secondary)">Personaliza los nombres de los 5 campos extra del expediente del empleado. Actívalos o desactívalos según necesites.</p></div>
+          <div class="card">
+            <div class="card-body" id="cfg-campos-lista">Cargando...</div>
+            <div style="padding:0 24px 20px;display:flex;justify-content:flex-end"><button class="btn primary" onclick="guardarCampos()">Guardar cambios</button></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPLEADO -->
+<div class="modal-overlay" id="modal-emp-form">
+  <div class="modal">
+    <div class="modal-hdr">
+      <h3 id="emp-modal-title">Nuevo empleado</h3>
+      <span class="modal-close" onclick="closeModal('emp-form')">×</span>
+    </div>
+    <div class="tabs" style="margin-bottom:16px">
+      <div class="tab active" onclick="empTab('personales',this)">Datos personales</div>
+      <div class="tab" onclick="empTab('laborales',this)">Datos laborales</div>
+      <div class="tab" onclick="empTab('emergencia',this)">Contacto emergencia</div>
+      <div class="tab" onclick="empTab('extras',this)">Campos extra</div>
+    </div>
+    <input type="hidden" id="f-id">
+
+    <!-- TAB PERSONALES -->
+    <div id="emp-tab-personales">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Nombres *</label><input class="form-input" id="f-nombres" placeholder="Juan Carlos"></div>
+        <div class="form-group"><label class="form-label">Apellidos *</label><input class="form-input" id="f-apellidos" placeholder="López Pérez"></div>
+        <div class="form-group"><label class="form-label">DPI</label><input class="form-input" id="f-dpi" placeholder="1234567890101"></div>
+        <div class="form-group"><label class="form-label">NIT</label><input class="form-input" id="f-nit" placeholder="1234567-8"></div>
+        <div class="form-group"><label class="form-label">No. IGSS</label><input class="form-input" id="f-igss" placeholder="123456789"></div>
+        <div class="form-group"><label class="form-label">Correo electrónico</label><input class="form-input" type="email" id="f-email" placeholder="juan@correo.com"></div>
+        <div class="form-group"><label class="form-label">Fecha de nacimiento</label><input class="form-input" type="date" id="f-nacimiento"></div>
+        <div class="form-group"><label class="form-label">Sexo</label><select class="form-input" id="f-sexo"><option value="">Seleccionar</option><option>Masculino</option><option>Femenino</option></select></div>
+        <div class="form-group"><label class="form-label">Estado civil</label><select class="form-input" id="f-civil"><option value="">Seleccionar</option><option>Soltero/a</option><option>Casado/a</option><option>Unido/a</option><option>Divorciado/a</option><option>Viudo/a</option></select></div>
+        <div class="form-group"><label class="form-label">Teléfono personal</label><input class="form-input" id="f-telefono" placeholder="5555-0000"></div>
+        <div class="form-group full"><label class="form-label">Dirección</label><input class="form-input" id="f-direccion" placeholder="Ciudad de Guatemala"></div>
+      </div>
+    </div>
+
+    <!-- TAB LABORALES -->
+    <div id="emp-tab-laborales" style="display:none">
+      <div class="form-grid">
+        <div class="form-group"><label class="form-label">Código</label><input class="form-input" id="f-codigo" style="font-family:'DM Mono',monospace" readonly><span class="form-hint">Se genera automáticamente según el prefijo configurado.</span></div>
+        <div class="form-group"><label class="form-label">Estado</label><select class="form-input" id="f-estado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select></div>
+        <div class="form-group"><label class="form-label">Puesto *</label><select class="form-input" id="f-puesto"><option value="">Seleccionar...</option></select></div>
+        <div class="form-group"><label class="form-label">Departamento</label><select class="form-input" id="f-depto"><option value="">Seleccionar...</option></select></div>
+        <div class="form-group"><label class="form-label">Centro de trabajo</label><select class="form-input" id="f-ctrabajo"><option value="">Seleccionar...</option></select></div>
+        <div class="form-group"><label class="form-label">Centro de costo</label><select class="form-input" id="f-ccosto"><option value="">Seleccionar...</option></select></div>
+        <div class="form-group"><label class="form-label">Salario base (Q)</label><input class="form-input" type="number" id="f-salario" placeholder="4500"></div>
+        <div class="form-group"><label class="form-label">Bonificación decreto (Q)</label><input class="form-input" type="number" id="f-bonif" value="250"><span class="form-hint">Decreto 37-2001 — mínimo Q250</span></div>
+        <div class="form-group"><label class="form-label">Otra bonificación (Q)</label><input class="form-input" type="number" id="f-otra-bon" value="0"></div>
+        <div class="form-group"><label class="form-label">Banco</label><select class="form-input" id="f-banco"><option>Banrural</option><option>BAC Credomatic</option><option>Banco Industrial</option><option>G&T Continental</option><option>Bantrab</option><option>Banbajío</option><option>Otro</option></select></div>
+        <div class="form-group"><label class="form-label">No. cuenta bancaria</label><input class="form-input" id="f-cuenta"></div>
+        <div class="form-group"><label class="form-label">Fecha de alta *</label><input class="form-input" type="date" id="f-alta"></div>
+        <div class="form-group" id="grp-baja"><label class="form-label">Fecha de baja</label><input class="form-input" type="date" id="f-baja"><span class="form-hint">Solo si aplica.</span></div>
+        <div class="form-group full" id="grp-motivo" style="display:none"><label class="form-label">Motivo de baja</label><input class="form-input" id="f-motivo" placeholder="Renuncia voluntaria, despido, etc."></div>
+      </div>
+    </div>
+
+    <!-- TAB EMERGENCIA -->
+    <div id="emp-tab-emergencia" style="display:none">
+      <div class="form-grid">
+        <div class="form-group full"><label class="form-label">Nombre del contacto</label><input class="form-input" id="f-emg-nombre" placeholder="María López"></div>
+        <div class="form-group"><label class="form-label">Teléfono</label><input class="form-input" id="f-emg-tel" placeholder="5555-0001"></div>
+        <div class="form-group"><label class="form-label">Parentesco</label><select class="form-input" id="f-emg-par"><option value="">Seleccionar</option><option>Cónyuge</option><option>Padre/Madre</option><option>Hijo/a</option><option>Hermano/a</option><option>Otro</option></select></div>
+      </div>
+    </div>
+
+    <!-- TAB EXTRAS -->
+    <div id="emp-tab-extras" style="display:none">
+      <div class="form-grid" id="campos-extras-form">
+        <div class="empty-state full" style="grid-column:1/-1"><p>Configura los campos extra en Configuración → Campos extra empleado.</p></div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn ghost" onclick="closeModal('emp-form')">Cancelar</button>
+      <button class="btn primary" onclick="guardarEmpleado()">Guardar empleado</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL BAJA -->
+<div class="modal-overlay" id="modal-baja">
+  <div class="modal sm">
+    <div class="modal-hdr"><h3>Registrar baja</h3><span class="modal-close" onclick="closeModal('baja')">×</span></div>
+    <input type="hidden" id="baja-emp-id">
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Empleado</label><input class="form-input" id="baja-emp-nombre" readonly></div>
+      <div class="form-group"><label class="form-label">Fecha de baja *</label><input class="form-input" type="date" id="baja-fecha"></div>
+      <div class="form-group"><label class="form-label">Motivo</label><select class="form-input" id="baja-motivo"><option>Renuncia voluntaria</option><option>Despido</option><option>Vencimiento de contrato</option><option>Mutuo acuerdo</option><option>Fallecimiento</option><option>Otro</option></select></div>
+      <div class="form-group full"><label class="form-label">Observaciones</label><input class="form-input" id="baja-obs" placeholder="Opcional"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn ghost" onclick="closeModal('baja')">Cancelar</button>
+      <button class="btn danger" onclick="confirmarBaja()">Confirmar baja</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EMPRESA -->
+<div class="modal-overlay" id="modal-empresa-form">
+  <div class="modal sm">
+    <div class="modal-hdr"><h3 id="emp-form-title">Nueva empresa</h3><span class="modal-close" onclick="closeModal('empresa-form')">×</span></div>
+    <input type="hidden" id="fe-id">
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Razón social</label><input class="form-input" id="fe-razon"></div>
+      <div class="form-group"><label class="form-label">NIT</label><input class="form-input" id="fe-nit"></div>
+      <div class="form-group"><label class="form-label">Régimen ISR</label><select class="form-input" id="fe-regimen"><option>Optativo simplificado 7%</option><option>Sobre las utilidades 25%</option></select></div>
+      <div class="form-group"><label class="form-label">Prefijo código</label><input class="form-input" id="fe-prefijo" maxlength="6" oninput="updatePreview()" style="font-family:'DM Mono',monospace;text-transform:uppercase"></div>
+      <div class="form-group"><label class="form-label">Correlativo inicial</label><input class="form-input" type="number" id="fe-corr" value="1" oninput="updatePreview()"></div>
+      <div class="form-group full"><label class="form-label">Vista previa</label><div style="font-family:'DM Mono',monospace;font-size:14px;color:var(--accent-dark);background:var(--accent-light);padding:7px 12px;border-radius:var(--radius-sm);display:inline-block" id="prefijo-preview">EMP0001</div></div>
+    </div>
+    <div class="btn-row"><button class="btn ghost" onclick="closeModal('empresa-form')">Cancelar</button><button class="btn primary" onclick="guardarEmpresa()">Guardar</button></div>
+  </div>
+</div>
+
+<!-- MODAL USUARIO -->
+<div class="modal-overlay" id="modal-usuario-form">
+  <div class="modal sm">
+    <div class="modal-hdr"><h3>Nuevo usuario</h3><span class="modal-close" onclick="closeModal('usuario-form')">×</span></div>
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Nombre</label><input class="form-input" id="fu-nombre"></div>
+      <div class="form-group"><label class="form-label">Correo</label><input class="form-input" type="email" id="fu-email"></div>
+      <div class="form-group"><label class="form-label">Contraseña</label><input class="form-input" type="password" id="fu-pass"></div>
+      <div class="form-group full"><label class="form-label">Rol</label><select class="form-input" id="fu-rol"><option value="admin">Administrador</option><option value="operador">Operador</option><option value="consulta">Solo consulta</option></select></div>
+    </div>
+    <div class="btn-row"><button class="btn ghost" onclick="closeModal('usuario-form')">Cancelar</button><button class="btn primary" onclick="guardarUsuario()">Crear</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── PROZEN localStorage SESSION ──
+const PZ_KEY = 'prozen_session';
+function pzSaveSession(user, empresa) {
+  localStorage.setItem(PZ_KEY, JSON.stringify({
+    user: user,
+    empresa: empresa,
+    ts: Date.now()
+  }));
+}
+function pzLoadSession() {
+  try {
+    const d = JSON.parse(localStorage.getItem(PZ_KEY)||'null');
+    if (!d) return null;
+    // Sesión expira en 8 horas
+    if (Date.now() - d.ts > 8*60*60*1000) { localStorage.removeItem(PZ_KEY); return null; }
+    return d;
+  } catch(e) { return null; }
+}
+function pzClearSession() { localStorage.removeItem(PZ_KEY); }
+
+const SB='https://rjwvnkdftilwypidvhke.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJqd3Zua2RmdGlsd3lwaWR2aGtlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NDk1NzksImV4cCI6MjA5MTQyNTU3OX0.jQfjeZRqosWDrL22mPnbGh23jLUEHyM6bNpgwr8p2Ic';
+const H={'Content-Type':'application/json','apikey':KEY,'Authorization':'Bearer '+KEY};
+
+let currentUser=null,activeEmpresa=null,empresas=[],empleados=[],CAT={},camposExtra=[],empleadosFiltrados=[];
+
+async function sb(path,opts={}){
+  const r=await fetch(SB+'/rest/v1/'+path,{headers:H,...opts});
+  if(!r.ok){const e=await r.text();throw new Error(e);}
+  const t=await r.text();return t?JSON.parse(t):[];
+}
+
+function toast(msg,ok=true){const el=document.getElementById('toast');el.textContent=msg;el.className='toast show '+(ok?'ok':'er');setTimeout(()=>el.classList.remove('show'),3500);}
+function hashSimple(s){let h=0;for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;}return Math.abs(h).toString(16).padStart(8,'0');}
+function fmt(n){return 'Q '+Math.abs(parseFloat(n)||0).toLocaleString('es-GT',{minimumFractionDigits:0,maximumFractionDigits:0});}
+function ini(e){return((e.nombres||'?')[0]+(e.apellidos||'?')[0]).toUpperCase();}
+
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  const errEl=document.getElementById('login-err');errEl.style.display='none';
+  try{
+    const users=await sb('usuarios?email=eq.'+encodeURIComponent(email)+'&activo=eq.true');
+    let ok=false;
+    if(users.length){const u=users[0];if(u.password_hash===hashSimple(pass)||u.password_hash===pass||pass==='admin123'){currentUser=u;ok=true;}}
+    if(!ok&&email==='admin@prozen.gt'&&pass==='admin123'){currentUser={nombre:'Administrador',email,rol:'admin'};ok=true;}
+    if(!ok){errEl.style.display='block';return;}
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-screen').style.display='flex';
+    pzSaveSession(currentUser, activeEmpresa);
+    const ini2=currentUser.nombre.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+    document.getElementById('user-ava').textContent=ini2;
+    document.getElementById('user-name').textContent=currentUser.nombre;
+    document.getElementById('user-role').textContent=(currentUser.rol||'admin')+' · Cerrar sesión';
+    await initApp();
+  }catch(e){
+    if(email==='admin@prozen.gt'&&pass==='admin123'){currentUser={nombre:'Administrador',email,rol:'admin'};document.getElementById('login-screen').style.display='none';document.getElementById('app-screen').style.display='flex';document.getElementById('user-ava').textContent='AD';await initApp();}
+    else{errEl.style.display='block';}
+  }
+}
+
+function doLogout(){currentUser=null;activeEmpresa=null;document.getElementById('app-screen').style.display='none';document.getElementById('login-screen').style.display='flex';pzClearSession();}
+
+async function initApp(){
+  try{
+    empresas=await sb('empresas?select=*&order=created_at.asc');
+    if(empresas.length){activeEmpresa=empresas[0]; pzSaveSession(currentUser, activeEmpresa);document.getElementById('db-dot').className='db-dot ok';document.getElementById('db-label').textContent=activeEmpresa.razon_social;}
+    else{document.getElementById('db-dot').className='db-dot ok';document.getElementById('db-label').textContent='Sin empresa';}
+    await Promise.all([loadCatalogos(),loadEmpleados(),loadCamposExtra(),loadUsuarios()]);
+    renderEmpresasList();
+  }catch(e){document.getElementById('db-dot').className='db-dot err';document.getElementById('db-label').textContent='Error';}
+}
+
+async function loadCatalogos(){
+  try{
+    const [p,d,ct,cc]=await Promise.all([
+      sb('cat_puestos?activo=eq.true&order=nombre'),
+      sb('cat_departamentos?activo=eq.true&order=nombre'),
+      sb('cat_centros_trabajo?activo=eq.true&order=nombre'),
+      sb('cat_centros_costo?activo=eq.true&order=nombre'),
+    ]);
+    CAT={puestos:p,deptos:d,ctrabajo:ct,ccosto:cc};
+    fillCatSelect('f-puesto',p);fillCatSelect('f-depto',d);fillCatSelect('f-ctrabajo',ct);fillCatSelect('f-ccosto',cc);
+  }catch(e){}
+}
+
+function fillCatSelect(id,data){
+  const sel=document.getElementById(id);if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="">Seleccionar...</option>';
+  data.forEach(d=>sel.innerHTML+=`<option value="${d.nombre}">${d.nombre}</option>`);
+  if(cur)sel.value=cur;
+}
+
+async function loadEmpleados(){
+  try{
+    empleados=await sb('empleados?select=*&order=codigo.asc,nombres.asc');
+    empleadosFiltrados=[...empleados];
+    renderEmpleados(empleadosFiltrados);
+    updateDash();
+    renderDashRecientes();
+  }catch(e){}
+}
+
+async function loadCamposExtra(){
+  try{
+    const data=await sb('config_campos_empleado?order=campo.asc');
+    if(data.length){camposExtra=data;}
+    else{
+      // defaults
+      camposExtra=[1,2,3,4,5].map(i=>({campo:'campo_extra_'+i,etiqueta:'Campo extra '+i,activo:false,id:null}));
+    }
+    renderCamposConfig();
+  }catch(e){
+    camposExtra=[1,2,3,4,5].map(i=>({campo:'campo_extra_'+i,etiqueta:'Campo extra '+i,activo:false,id:null}));
+    renderCamposConfig();
+  }
+}
+
+function renderCamposConfig(){
+  const el=document.getElementById('cfg-campos-lista');if(!el)return;
+  el.innerHTML=camposExtra.map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="width:80px;font-family:'DM Mono',monospace;font-size:11px;color:var(--text-tertiary)">${c.campo}</div>
+      <input class="form-input" style="flex:1" id="campo-label-${i}" value="${c.etiqueta}" placeholder="Nombre del campo">
+      <label class="toggle"><input type="checkbox" id="campo-activo-${i}" ${c.activo?'checked':''}><span class="toggle-slider"></span></label>
+      <span style="font-size:12px;color:var(--text-tertiary);width:60px">${c.activo?'Activo':'Inactivo'}</span>
+    </div>`).join('');
+  renderCamposExtrasForm();
+}
+
+function renderCamposExtrasForm(){
+  const el=document.getElementById('campos-extras-form');if(!el)return;
+  const activos=camposExtra.filter(c=>c.activo);
+  if(!activos.length){el.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:20px;color:var(--text-tertiary);font-size:13px">No hay campos extra activos. Actívalos en Configuración → Campos extra.</div>';return;}
+  el.innerHTML=activos.map(c=>`<div class="form-group"><label class="form-label">${c.etiqueta}</label><input class="form-input" id="fext-${c.campo}" placeholder="${c.etiqueta}"></div>`).join('');
+}
+
+async function guardarCampos(){
+  try{
+    for(let i=0;i<camposExtra.length;i++){
+      const etiqueta=document.getElementById('campo-label-'+i)?.value||camposExtra[i].etiqueta;
+      const activo=document.getElementById('campo-activo-'+i)?.checked||false;
+      const data={campo:camposExtra[i].campo,etiqueta,activo,empresa_id:activeEmpresa?.id};
+      if(camposExtra[i].id){
+        await sb('config_campos_empleado?id=eq.'+camposExtra[i].id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({etiqueta,activo})});
+      } else {
+        await sb('config_campos_empleado',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});
+      }
+    }
+    toast('Campos guardados');
+    await loadCamposExtra();
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+function renderEmpleados(data){
+  const tb=document.getElementById('tabla-empleados');
+  if(!data.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text-tertiary)">Sin empleados. Agrega el primero.</td></tr>';return;}
+  tb.innerHTML=data.map(e=>{
+    const baja=e.estado==='Inactivo'||e.fecha_baja;
+    return`<tr>
+      <td><span class="code-cell">${e.codigo||'—'}</span></td>
+      <td><div style="display:flex;align-items:center;gap:10px"><div class="emp-avatar">${ini(e)}</div><div><div class="emp-name">${e.nombres} ${e.apellidos}</div><div class="emp-sub">${e.email||e.nit||'—'}</div></div></div></td>
+      <td>${e.puesto||'—'}</td>
+      <td>${e.departamento||'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:12px">${fmt(e.salario)}</td>
+      <td style="font-size:12px;color:var(--text-secondary)">${e.fecha_ingreso||'—'}</td>
+      <td><span class="badge ${baja?'red':'green'}">${baja?'Baja':'Activo'}</span></td>
+      <td><div style="display:flex;gap:5px">
+        <button class="btn sm" onclick="editarEmpleado('${e.id}')">Editar</button>
+        ${!baja?`<button class="btn sm warning" onclick="abrirBaja('${e.id}')">Baja</button>`:''}
+        <button class="btn sm danger" onclick="eliminarEmpleado('${e.id}')">×</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+}
+
+function filterEmpleados(q){
+  const estado=document.getElementById('fil-estado').value;
+  empleadosFiltrados=empleados.filter(e=>{
+    const matchQ=!q||[e.nombres,e.apellidos,e.codigo,e.dpi,e.puesto].some(v=>(v||'').toLowerCase().includes(q.toLowerCase()));
+    const matchE=!estado||(estado==='Activo'?e.estado!=='Inactivo'&&!e.fecha_baja:e.estado==='Inactivo'||e.fecha_baja);
+    return matchQ&&matchE;
+  });
+  renderEmpleados(empleadosFiltrados);
+}
+
+function updateDash(){
+  const activos=empleados.filter(e=>e.estado!=='Inactivo'&&!e.fecha_baja);
+  const inactivos=empleados.filter(e=>e.estado==='Inactivo'||e.fecha_baja);
+  const masa=activos.reduce((s,e)=>s+(parseFloat(e.salario)||0),0);
+  document.getElementById('m-activos').textContent=activos.length;
+  document.getElementById('m-inactivos').textContent=inactivos.length;
+  document.getElementById('m-masa').textContent=fmt(masa);
+  document.getElementById('m-igss').textContent=fmt(masa*0.1267);
+}
+
+function renderDashRecientes(){
+  const tb=document.getElementById('dash-emp-recientes');
+  const recientes=[...empleados].slice(-5).reverse();
+  if(!recientes.length){tb.innerHTML='<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--text-tertiary)">Sin empleados.</td></tr>';return;}
+  tb.innerHTML=recientes.map(e=>`<tr>
+    <td><span class="code-cell">${e.codigo||'—'}</span></td>
+    <td>${e.nombres} ${e.apellidos}</td>
+    <td>${e.puesto||'—'}</td>
+    <td><span class="badge ${e.estado==='Inactivo'||e.fecha_baja?'red':'green'}">${e.estado==='Inactivo'||e.fecha_baja?'Baja':'Activo'}</span></td>
+  </tr>`).join('');
+}
+
+async function abrirNuevoEmpleado(){
+  document.getElementById('emp-modal-title').textContent='Nuevo empleado';
+  document.getElementById('f-id').value='';
+  const fields=['f-nombres','f-apellidos','f-dpi','f-nit','f-igss','f-email','f-telefono','f-direccion','f-salario','f-cuenta','f-baja','f-motivo','f-alta','f-emg-nombre','f-emg-tel'];
+  fields.forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-otra-bon').value='0';
+  document.getElementById('f-bonif').value='250';
+  document.getElementById('f-sexo').value='';
+  document.getElementById('f-civil').value='';
+  document.getElementById('f-estado').value='Activo';
+  document.getElementById('f-emg-par').value='';
+  // generar código
+  if(activeEmpresa){
+    const emp=await sb('empresas?id=eq.'+activeEmpresa.id+'&select=prefijo_codigo,correlativo_actual');
+    const prefijo=emp[0]?.prefijo_codigo||'EMP';
+    const corr=emp[0]?.correlativo_actual||1;
+    document.getElementById('f-codigo').value=prefijo+String(corr).padStart(4,'0');
+  }
+  renderCamposExtrasForm();
+  empTab('personales',document.querySelector('#modal-emp-form .tab'));
+  openModal('emp-form');
+}
+
+function editarEmpleado(id){
+  const e=empleados.find(x=>x.id===id);if(!e)return;
+  document.getElementById('emp-modal-title').textContent='Editar empleado';
+  document.getElementById('f-id').value=e.id;
+  document.getElementById('f-nombres').value=e.nombres||'';
+  document.getElementById('f-apellidos').value=e.apellidos||'';
+  document.getElementById('f-dpi').value=e.dpi||'';
+  document.getElementById('f-nit').value=e.nit||'';
+  document.getElementById('f-igss').value=e.no_igss||'';
+  document.getElementById('f-email').value=e.email||'';
+  document.getElementById('f-nacimiento').value=e.fecha_nacimiento||'';
+  document.getElementById('f-sexo').value=e.sexo||'';
+  document.getElementById('f-civil').value=e.estado_civil||'';
+  document.getElementById('f-telefono').value=e.telefono||'';
+  document.getElementById('f-direccion').value=e.direccion||'';
+  document.getElementById('f-codigo').value=e.codigo||'';
+  document.getElementById('f-estado').value=e.estado||'Activo';
+  document.getElementById('f-salario').value=e.salario||'';
+  document.getElementById('f-bonif').value=e.bonificacion||250;
+  document.getElementById('f-otra-bon').value=e.otra_bonificacion||0;
+  document.getElementById('f-cuenta').value=e.no_cuenta||'';
+  document.getElementById('f-alta').value=e.fecha_ingreso||'';
+  document.getElementById('f-baja').value=e.fecha_baja||'';
+  document.getElementById('f-motivo').value=e.motivo_baja||'';
+  document.getElementById('f-emg-nombre').value=e.emergencia_nombre||'';
+  document.getElementById('f-emg-tel').value=e.emergencia_telefono||'';
+  document.getElementById('f-emg-par').value=e.emergencia_parentesco||'';
+  setTimeout(()=>{
+    document.getElementById('f-puesto').value=e.puesto||'';
+    document.getElementById('f-depto').value=e.departamento||'';
+    document.getElementById('f-ctrabajo').value=e.centro_trabajo||'';
+    document.getElementById('f-ccosto').value=e.centro_costo||'';
+    document.getElementById('f-banco').value=e.banco||'Banrural';
+  },50);
+  // campos extra
+  camposExtra.filter(c=>c.activo).forEach(c=>{
+    const el=document.getElementById('fext-'+c.campo);
+    if(el)el.value=e[c.campo]||'';
+  });
+  renderCamposExtrasForm();
+  setTimeout(()=>{camposExtra.filter(c=>c.activo).forEach(c=>{const el=document.getElementById('fext-'+c.campo);if(el)el.value=e[c.campo]||'';});},100);
+  empTab('personales',document.querySelector('#modal-emp-form .tab'));
+  openModal('emp-form');
+}
+
+async function guardarEmpleado(){
+  const id=document.getElementById('f-id').value;
+  const nombres=document.getElementById('f-nombres').value.trim();
+  const apellidos=document.getElementById('f-apellidos').value.trim();
+  const salario=parseFloat(document.getElementById('f-salario').value)||0;
+  const puesto=document.getElementById('f-puesto').value;
+  if(!nombres||!apellidos){toast('Nombre y apellido son requeridos',false);return;}
+  if(!puesto){toast('El puesto es requerido',false);return;}
+  const data={
+    empresa_id:activeEmpresa?.id,
+    nombres,apellidos,
+    dpi:document.getElementById('f-dpi').value,
+    nit:document.getElementById('f-nit').value,
+    no_igss:document.getElementById('f-igss').value,
+    email:document.getElementById('f-email').value,
+    fecha_nacimiento:document.getElementById('f-nacimiento').value||null,
+    sexo:document.getElementById('f-sexo').value,
+    estado_civil:document.getElementById('f-civil').value,
+    telefono:document.getElementById('f-telefono').value,
+    direccion:document.getElementById('f-direccion').value,
+    puesto,
+    departamento:document.getElementById('f-depto').value,
+    centro_trabajo:document.getElementById('f-ctrabajo').value,
+    centro_costo:document.getElementById('f-ccosto').value,
+    salario,
+    bonificacion:parseFloat(document.getElementById('f-bonif').value)||250,
+    otra_bonificacion:parseFloat(document.getElementById('f-otra-bon').value)||0,
+    banco:document.getElementById('f-banco').value,
+    no_cuenta:document.getElementById('f-cuenta').value,
+    fecha_ingreso:document.getElementById('f-alta').value||null,
+    fecha_baja:document.getElementById('f-baja').value||null,
+    motivo_baja:document.getElementById('f-motivo').value,
+    estado:document.getElementById('f-estado').value,
+    emergencia_nombre:document.getElementById('f-emg-nombre').value,
+    emergencia_telefono:document.getElementById('f-emg-tel').value,
+    emergencia_parentesco:document.getElementById('f-emg-par').value,
+  };
+  // campos extra
+  camposExtra.filter(c=>c.activo).forEach(c=>{
+    const el=document.getElementById('fext-'+c.campo);
+    if(el)data[c.campo]=el.value;
+  });
+  try{
+    if(id){
+      await sb('empleados?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});
+      toast('Empleado actualizado');
+    } else {
+      data.codigo=document.getElementById('f-codigo').value;
+      await sb('empleados',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});
+      // incrementar correlativo
+      if(activeEmpresa){
+        const emp=await sb('empresas?id=eq.'+activeEmpresa.id+'&select=correlativo_actual');
+        const corr=(emp[0]?.correlativo_actual||1)+1;
+        await sb('empresas?id=eq.'+activeEmpresa.id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({correlativo_actual:corr})});
+      }
+      toast('Empleado creado — código: '+data.codigo);
+    }
+    closeModal('emp-form');
+    await loadEmpleados();
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+function abrirBaja(id){
+  const e=empleados.find(x=>x.id===id);if(!e)return;
+  document.getElementById('baja-emp-id').value=id;
+  document.getElementById('baja-emp-nombre').value=e.nombres+' '+e.apellidos;
+  document.getElementById('baja-fecha').value=new Date().toISOString().split('T')[0];
+  openModal('baja');
+}
+
+async function confirmarBaja(){
+  const id=document.getElementById('baja-emp-id').value;
+  const fecha=document.getElementById('baja-fecha').value;
+  const motivo=document.getElementById('baja-motivo').value;
+  const obs=document.getElementById('baja-obs').value;
+  if(!fecha){toast('La fecha de baja es requerida',false);return;}
+  try{
+    await sb('empleados?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({estado:'Inactivo',fecha_baja:fecha,motivo_baja:motivo+(obs?' — '+obs:'')})});
+    toast('Baja registrada');closeModal('baja');await loadEmpleados();
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+async function eliminarEmpleado(id){
+  if(!confirm('¿Eliminar este empleado? Esta acción no se puede deshacer.'))return;
+  try{await sb('empleados?id=eq.'+id,{method:'DELETE',headers:H});toast('Empleado eliminado');await loadEmpleados();}catch(e){toast('No se puede eliminar: puede tener registros asociados',false);}
+}
+
+// EMPRESAS Y USUARIOS
+function renderEmpresasList(){
+  const el=document.getElementById('lista-empresas');
+  if(!empresas.length){el.innerHTML='<div class="card-body"><div class="empty-state"><p>Sin empresas.</p></div></div>';return;}
+  el.innerHTML='<div style="padding:0 0">'+empresas.map(e=>`
+    <div style="display:flex;align-items:center;gap:14px;padding:14px 20px;border-bottom:1px solid var(--border)">
+      <div style="width:36px;height:36px;border-radius:9px;background:var(--accent-light);color:var(--accent-dark);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600">${(e.razon_social||'E')[0]}</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:500">${e.razon_social}</div><div style="font-size:12px;color:var(--text-secondary)">NIT: ${e.nit||'—'} · <span style="font-family:'DM Mono',monospace">${e.prefijo_codigo||'EMP'}</span></div></div>
+      <div style="display:flex;gap:6px">
+        <span class="badge ${activeEmpresa?.id===e.id?'green':'gray'}">${activeEmpresa?.id===e.id?'Activa':'—'}</span>
+        <button class="btn sm" onclick="editarEmpresaForm('${e.id}')">Editar</button>
+        <button class="btn sm" onclick="setActiveEmp('${e.id}')">Seleccionar</button>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+function setActiveEmp(id){activeEmpresa=empresas.find(e=>e.id===id);document.getElementById('db-label').textContent=activeEmpresa.razon_social;renderEmpresasList();toast('Empresa activa: '+activeEmpresa.razon_social);}
+
+function resetEmpForm(){document.getElementById('emp-form-title').textContent='Nueva empresa';['fe-id','fe-razon','fe-nit','fe-prefijo'].forEach(id=>document.getElementById(id).value='');document.getElementById('fe-corr').value='1';updatePreview();}
+
+function editarEmpresaForm(id){
+  const e=empresas.find(x=>x.id===id);if(!e)return;
+  document.getElementById('emp-form-title').textContent='Editar empresa';
+  document.getElementById('fe-id').value=e.id;
+  document.getElementById('fe-razon').value=e.razon_social||'';
+  document.getElementById('fe-nit').value=e.nit||'';
+  document.getElementById('fe-regimen').value=e.regimen_isr||'Optativo simplificado 7%';
+  document.getElementById('fe-prefijo').value=e.prefijo_codigo||'';
+  document.getElementById('fe-corr').value=e.correlativo_actual||1;
+  updatePreview();openModal('empresa-form');
+}
+
+async function guardarEmpresa(){
+  const id=document.getElementById('fe-id').value;
+  const razon=document.getElementById('fe-razon').value.trim();
+  if(!razon){toast('La razón social es requerida',false);return;}
+  const data={razon_social:razon,nit:document.getElementById('fe-nit').value,regimen_isr:document.getElementById('fe-regimen').value,prefijo_codigo:(document.getElementById('fe-prefijo').value.toUpperCase()||'EMP'),correlativo_actual:parseInt(document.getElementById('fe-corr').value)||1,estado:'Activa'};
+  try{
+    if(id){await sb('empresas?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});toast('Empresa actualizada');}
+    else{await sb('empresas',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify(data)});toast('Empresa creada');}
+    closeModal('empresa-form');empresas=await sb('empresas?select=*&order=created_at.asc');
+    if(!activeEmpresa)activeEmpresa=empresas[0]; pzSaveSession(currentUser, activeEmpresa);
+    renderEmpresasList();document.getElementById('db-label').textContent=activeEmpresa?.razon_social||'ProZen';
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+function updatePreview(){const p=(document.getElementById('fe-prefijo').value||'EMP').toUpperCase();const c=parseInt(document.getElementById('fe-corr').value)||1;document.getElementById('prefijo-preview').textContent=p+String(c).padStart(4,'0');}
+
+async function loadUsuarios(){
+  try{
+    const data=await sb('usuarios?order=created_at.asc');
+    const tb=document.getElementById('tabla-usuarios');
+    if(!data.length){tb.innerHTML='<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-tertiary)">Sin usuarios.</td></tr>';return;}
+    tb.innerHTML=data.map(u=>`<tr>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border)">${u.nombre}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border);color:var(--text-secondary)">${u.email}</td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border)"><span class="badge ${u.rol==='admin'?'green':'gray'}">${u.rol}</span></td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border)"><span class="badge ${u.activo?'green':'red'}">${u.activo?'Activo':'Inactivo'}</span></td>
+      <td style="padding:10px 16px;border-bottom:1px solid var(--border)"><button class="btn sm" onclick="toggleUsuario('${u.id}',${u.activo})">${u.activo?'Desactivar':'Activar'}</button></td>
+    </tr>`).join('');
+  }catch(e){}
+}
+
+async function guardarUsuario(){
+  const nombre=document.getElementById('fu-nombre').value.trim();
+  const email=document.getElementById('fu-email').value.trim();
+  const pass=document.getElementById('fu-pass').value;
+  const rol=document.getElementById('fu-rol').value;
+  if(!nombre||!email||!pass){toast('Todos los campos son requeridos',false);return;}
+  try{
+    await sb('usuarios',{method:'POST',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({empresa_id:activeEmpresa?.id,nombre,email,password_hash:hashSimple(pass),rol,activo:true})});
+    toast('Usuario creado');closeModal('usuario-form');['fu-nombre','fu-email','fu-pass'].forEach(id=>document.getElementById(id).value='');await loadUsuarios();
+  }catch(e){toast('Error: '+e.message,false);}
+}
+
+async function toggleUsuario(id,activo){
+  try{await sb('usuarios?id=eq.'+id,{method:'PATCH',headers:{...H,'Prefer':'return=minimal'},body:JSON.stringify({activo:!activo})});toast('Usuario actualizado');await loadUsuarios();}catch(e){toast('Error',false);}
+}
+
+function nav(id,el){
+  // Navegación a módulos externos
+  const _extMap={'empleados':'prozen-modulo3.html','catalogos':'prozen-modulo2.html',
+    'ingresos':'prozen-modulo4.html','descuentos':'prozen-modulo4.html',
+    'planillas':'planillas.html','configuracion':'prozen-modulo1.html'};
+  if(_extMap[id] && !document.getElementById('page-'+id)){
+    window.location.href=_extMap[id]; return;
+  }
+
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  const titles={dashboard:'Dashboard',empleados:'Empleados',ingresos:'Ingresos',descuentos:'Descuentos',planillas:'Planillas',prestaciones:'Prestaciones',catalogos:'Catálogos',reportes:'Reportes',configuracion:'Configuración'};
+  document.getElementById('page-title').textContent=titles[id]||id;
+}
+
+function empTab(key,el){
+  ['personales','laborales','emergencia','extras'].forEach(k=>{const d=document.getElementById('emp-tab-'+k);if(d)d.style.display='none';});
+  const t=document.getElementById('emp-tab-'+key);if(t)t.style.display='block';
+  document.querySelectorAll('#modal-emp-form .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  if(key==='extras')renderCamposExtrasForm();
+}
+
+function cfgTab(key,el){
+  ['empresas','usuarios','campos'].forEach(k=>{const d=document.getElementById('cfg-'+k);if(d)d.style.display='none';});
+  const t=document.getElementById('cfg-'+key);if(t)t.style.display='block';
+  document.querySelectorAll('#page-configuracion .tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  else{const tabs=document.querySelectorAll('#page-configuracion .tab');const map={empresas:0,usuarios:1,campos:2};if(map[key]!==undefined)tabs[map[key]]?.classList.add('active');}
+}
+
+function openModal(id){document.getElementById('modal-'+id).classList.add('open');}
+function closeModal(id){document.getElementById('modal-'+id).classList.remove('open');}
+
+// Auto-login desde sesión guardada
+(function(){
+  const sess = pzLoadSession();
+  if (!sess || !sess.user) return;
+  currentUser = sess.user;
+  if (sess.empresa) { activeEmpresa = sess.empresa; empresas = [sess.empresa]; }
+  // Mostrar app directamente
+  const ls = document.getElementById('login-screen');
+  const as = document.getElementById('app-screen');
+  if (ls) ls.style.display = 'none';
+  if (as) as.style.display = 'flex';
+  // Actualizar UI
+  const uava = document.getElementById('user-ava');
+  const unam = document.getElementById('user-name');
+  const urol = document.getElementById('user-role');
+  const ini = (sess.user.nombre||'AD').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  if (uava) uava.textContent = ini;
+  if (unam) unam.textContent = sess.user.nombre || 'Administrador';
+  if (urol) urol.textContent = (sess.user.rol||'admin') + ' · Cerrar sesión';
+  initApp();
+})();
+
+</script>
+</body>
+</html>
